@@ -56,10 +56,12 @@ function Login() {
                         <div className="w-11 h-11 rounded-xl flex items-center justify-center"
                             style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
                         </div>
-                        <span className="text-white/70 text-sm font-medium tracking-wider uppercase">AES Platform</span>
+                        <span className="text-white/70 text-sm font-medium tracking-wider uppercase">IMS Platform</span>
                     </div>
                 </div>
 
@@ -69,16 +71,16 @@ function Login() {
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
                             style={{ background: 'rgba(239,68,68,0.15)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.2)' }}>
                             <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                            Emergency Response System
+                            Incident Response System
                         </div>
                         <h1 className="text-4xl xl:text-5xl font-bold text-white leading-[1.15] tracking-tight">
-                            Airport<br />
-                            Emergency<br />
+                            Incident<br />
+                            Management<br />
                             <span style={{ color: '#93B5FF' }}>System</span>
                         </h1>
                     </div>
                     <p className="text-base leading-relaxed max-w-md" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                        Real-time incident management, rapid response coordination, and comprehensive emergency oversight for airport operations.
+                        Real-time incident management, rapid response coordination, and comprehensive emergency oversight for organizational operations.
                     </p>
 
                     {/* Stats */}
@@ -119,10 +121,12 @@ function Login() {
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                             style={{ background: '#0B1D3A' }}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-1 1 3 2 2 3 1-1v-3l3-2 3.7 7.3c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.6.5-1.1z"/>
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
                             </svg>
                         </div>
-                        <span className="font-semibold text-gray-800">Airport Emergency System</span>
+                        <span className="font-semibold text-gray-800">Incident Management System</span>
                     </div>
 
                     {/* Header */}
@@ -181,7 +185,7 @@ function Login() {
                                         boxShadow: focusedField === 'email' ? '0 0 0 3px rgba(11,29,58,0.06)' : 'none'
                                     }}
                                     required
-                                    placeholder="name@airport.gov"
+                                    placeholder="enter your email"
                                 />
                             </div>
                         </div>
@@ -311,7 +315,7 @@ function Login() {
 
                     {/* Footer */}
                     <p className="text-center text-xs text-gray-300 mt-8">
-                        &copy; {new Date().getFullYear()} Airport Emergency System · Authorized access only
+                        &copy; {new Date().getFullYear()} Incident Management System · Authorized access only
                     </p>
                 </div>
             </div>

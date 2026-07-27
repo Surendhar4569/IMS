@@ -19,7 +19,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors(
+    {
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    }
+));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -58,7 +65,7 @@ const startServer = async () => {
         // Create tables and setup database
         await createTables();
         
-        app.listen(PORT, () => {
+        app.listen(PORT,'0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Admin Email: ${process.env.ADMIN_EMAIL}`);
             console.log(`Admin Password: ${process.env.ADMIN_PASSWORD}`);

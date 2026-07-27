@@ -256,13 +256,11 @@ function Incidents() {
 
   useEffect(() => {
     if (activeTab === 'form') {
-      // focus the title input but prevent automatic scrolling
       try {
         requestAnimationFrame(() => {
           titleRef.current?.focus?.({ preventScroll: true });
         });
       } catch (e) {
-        // older browsers may not support preventScroll option
         requestAnimationFrame(() => {
           titleRef.current?.focus?.();
         });
@@ -294,7 +292,6 @@ function Incidents() {
         description: formData.description || null,
         severity_level: formData.severity_level,
         incident_status: formData.incident_status,
-        // reported_by taken from authenticated user
         reported_by: user?.id ? Number(user.id) : null
       };
       
@@ -303,7 +300,10 @@ function Incidents() {
         setMessage({ type: 'success', text: 'Incident updated successfully' });
       } else {
         await axios.post(incidentsApi, payload, getAuthConfig());
-        setMessage({ type: 'success', text: 'Incident reported successfully' });
+        setMessage({ type: 'success', text: 'Incident added successfully' });
+        //window.location.href = "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign";
+        window.open("https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign", "_blank");
+        // return;
       }
       
       resetForm();
@@ -387,11 +387,22 @@ function Incidents() {
 
   const getSeverityIcon = (severity) => {
     switch(severity) {
-      case 'LOW': return <CheckCircle className="w-3 h-3" />;
-      case 'MEDIUM': return <AlertCircle className="w-3 h-3" />;
-      case 'HIGH': return <AlertTriangle className="w-3 h-3" />;
-      case 'CRITICAL': return <AlertOctagon className="w-3 h-3" />;
-      default: return <AlertCircle className="w-3 h-3" />;
+      case 'LOW': return <CheckCircle className="w-3.5 h-3.5" />;
+      case 'MEDIUM': return <AlertCircle className="w-3.5 h-3.5" />;
+      case 'HIGH': return <AlertTriangle className="w-3.5 h-3.5" />;
+      case 'CRITICAL': return <AlertOctagon className="w-3.5 h-3.5" />;
+      default: return <AlertCircle className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const getSeverityButtonStyle = (level, isActive) => {
+    if (!isActive) return 'border-2 border-gray-200 text-gray-500 bg-white hover:bg-gray-50 hover:border-gray-300';
+    switch(level) {
+      case 'LOW': return 'bg-green-500 text-white border-2 border-green-500 shadow-md shadow-green-200';
+      case 'MEDIUM': return 'bg-yellow-500 text-white border-2 border-yellow-500 shadow-md shadow-yellow-200';
+      case 'HIGH': return 'bg-orange-500 text-white border-2 border-orange-500 shadow-md shadow-orange-200';
+      case 'CRITICAL': return 'bg-red-600 text-white border-2 border-red-600 shadow-md shadow-red-200';
+      default: return 'bg-gray-500 text-white border-2 border-gray-500 shadow-md';
     }
   };
 
@@ -513,9 +524,9 @@ function Incidents() {
               }`}
             >
               <Plus className="w-4 h-4" />
-              {editingId ? 'Edit Incident' : 'Report Incident'}
+              {editingId ? 'Edit Incident' : 'Add Incident'}
             </button>
-            <button
+            {/* <button
               onClick={() => setActiveTab('analytics')}
               className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                 activeTab === 'analytics' 
@@ -525,7 +536,7 @@ function Incidents() {
             >
               <BarChart3 className="w-4 h-4" />
               Analytics
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -561,7 +572,7 @@ function Incidents() {
                   <span className="text-2xl font-bold text-gray-900">{stats.total_incidents}</span>
                 </div>
                 <h3 className="text-sm font-semibold text-gray-700">Total Incidents</h3>
-                <p className="text-xs text-gray-500 mt-1">All reported incidents</p>
+                <p className="text-xs text-gray-500 mt-1">All incidents</p>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
@@ -711,10 +722,10 @@ function Incidents() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingId ? 'Edit Incident' : 'Report New Incident'}
+                {editingId ? 'Edit Incident' : 'Add New Incident'}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                {editingId ? 'Update incident details' : 'Document a new facility incident'}
+                {editingId ? 'Update incident details' : 'Add a new facility incident'}
               </p>
             </div>
             
@@ -776,21 +787,24 @@ function Incidents() {
                     </div>
                   </div>
                   
+                  {/* Severity Level — Button Group */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Severity Level
                     </label>
-                    <select
-                      name="severity_level"
-                      value={formData.severity_level}
-                      onChange={handleInputChange}
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-100"
-                    >
-                      <option value="LOW">Low</option>
-                      <option value="MEDIUM">Medium</option>
-                      <option value="HIGH">High</option>
-                      <option value="CRITICAL">Critical</option>
-                    </select>
+                    <div className="flex gap-2">
+                      {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, severity_level: level }))}
+                          className={`flex-1 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${getSeverityButtonStyle(level, formData.severity_level === level)}`}
+                        >
+                          {getSeverityIcon(level)}
+                          {level === 'LOW' ? 'Low' : level === 'MEDIUM' ? 'Medium' : level === 'HIGH' ? 'High' : 'Critical'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 
@@ -805,14 +819,12 @@ function Incidents() {
                       onChange={handleInputChange}
                       className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-100"
                     >
-                      <option value="OPEN">Open - Initial Report</option>
+                      <option value="OPEN">Open - Initial Entry</option>
                       <option value="IN_PROGRESS">In Progress - Being Addressed</option>
                       <option value="RESOLVED">Resolved - Action Taken</option>
                       <option value="CLOSED">Closed - Case Closed</option>
                     </select>
                   </div>
-                  
-                  {/* Reported By is set from authenticated user; field removed from UI */}
                   
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -843,8 +855,8 @@ function Incidents() {
                     </>
                   ) : (
                     <>
-                      {editingId ? <RefreshCw className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-                      {editingId ? 'Update Incident' : 'Report Incident'}
+                      {editingId ? <RefreshCw className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      {editingId ? 'Update Incident' : 'Add Incident'}
                     </>
                   )}
                 </button>
@@ -872,7 +884,7 @@ function Incidents() {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Incidents Directory</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Track and manage all reported incidents across your facilities
+                    Track and manage all incidents across your facilities
                   </p>
                 </div>
                 
@@ -985,7 +997,7 @@ function Incidents() {
                 <p className="text-gray-500 text-sm mb-4">
                   {filters.search || filters.incident_status || filters.severity_level || filters.incident_type
                     ? 'Try adjusting your filters' 
-                    : 'Report your first incident to get started'}
+                    : 'Add your first incident to get started'}
                 </p>
                 {(filters.search || filters.incident_status || filters.severity_level || filters.incident_type) && (
                   <button onClick={resetFilters} className="text-red-600 text-sm font-semibold">
@@ -1001,7 +1013,7 @@ function Incidents() {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Incident</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Severity</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Reported</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -1062,34 +1074,6 @@ function Incidents() {
                               <Eye className="w-3 h-3" />
                               View
                             </button>
-                            <button
-                              onClick={() => handleReleaseIncident(incident.id)}
-                              disabled={togglingId === incident.id || incident.incident_status === 'CLOSED'}
-                              className="px-3 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
-                            >
-                              {togglingId === incident.id ? (
-                                <Loader className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Check className="w-3 h-3" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleEdit(incident)}
-                              className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(incident.id, incident.incident_title, incident.incident_code)}
-                              disabled={deletingId === incident.id}
-                              className="px-3 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                            >
-                              {deletingId === incident.id ? (
-                                <Loader className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-3 h-3" />
-                              )}
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1125,15 +1109,14 @@ function Incidents() {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-                      
                       return (
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-10 h-10 rounded-lg text-sm font-semibold transition-colors ${
+                          className={`px-3 py-1 rounded-lg text-sm font-medium ${
                             currentPage === pageNum
                               ? 'bg-[#0B1D3A] text-white'
-                              : 'text-gray-600 hover:bg-gray-100'
+                              : 'border border-gray-300 text-gray-700 hover:bg-white'
                           }`}
                         >
                           {pageNum}
@@ -1153,108 +1136,151 @@ function Incidents() {
             )}
           </div>
         )}
-      </div>
 
-      {/* Incident Details Modal */}
-      {showDetailsModal && selectedIncident && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  {getIncidentTypeIcon(selectedIncident.incident_type)}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">{selectedIncident.incident_title}</h2>
-                  <p className="text-sm text-gray-500 font-mono">{selectedIncident.incident_code}</p>
+        {/* Details Modal */}
+        {showDetailsModal && selectedIncident && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDetailsModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gradient-to-r from-[#0B1D3A] to-[#1A3A6E] p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{selectedIncident.incident_title}</h3>
+                    <p className="text-sm text-white/70 mt-1 font-mono">{selectedIncident.incident_code}</p>
+                  </div>
+                  <button onClick={() => setShowDetailsModal(false)} className="text-white/70 hover:text-white p-2">
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
-              <button onClick={() => setShowDetailsModal(false)} className="p-1 hover:bg-gray-100 rounded transition">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      Incident Details
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Type:</span>
-                        <span className="font-medium flex items-center gap-1">
-                          {getIncidentTypeIcon(selectedIncident.incident_type)}
-                          {selectedIncident.incident_type}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Severity:</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${getSeverityColor(selectedIncident.severity_level)}`}>
-                          {getSeverityIcon(selectedIncident.severity_level)}
-                          {selectedIncident.severity_level}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Status:</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${getStatusColor(selectedIncident.incident_status)}`}>
-                          {getStatusIcon(selectedIncident.incident_status)}
-                          {selectedIncident.incident_status.replace('_', ' ')}
-                        </span>
-                      </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Quick Info */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      {getIncidentTypeIcon(selectedIncident.incident_type)}
                     </div>
+                    <p className="text-xs text-gray-500 mb-1">Type</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.incident_type}</p>
                   </div>
-                  
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      Location Information
-                    </h3>
-                    <div className="space-y-2">
-                      {selectedIncident.location_details && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">Specific Location:</span>
-                          <span className="font-medium text-right">{selectedIncident.location_details}</span>
-                        </div>
-                      )}
+                  <div className="text-center p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      {getSeverityIcon(selectedIncident.severity_level)}
                     </div>
+                    <p className="text-xs text-gray-500 mb-1">Severity</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.severity_level}</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      {getStatusIcon(selectedIncident.incident_status)}
+                    </div>
+                    <p className="text-xs text-gray-500 mb-1">Status</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.incident_status.replace('_', ' ')}</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-gray-50">
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      <Users className="w-4 h-4 text-gray-600" />
+                    </div>
+                    <p className="text-xs text-gray-500 mb-1">Affected</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.people_affected || 0}</p>
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      Report Information
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Reported By:</span>
-                        <span className="font-medium">{selectedIncident.reported_by_details?.employee_name || 'System'}</span>
+
+                {/* Location */}
+                {selectedIncident.location_details && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      Location Details
+                    </h4>
+                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">{selectedIncident.location_details}</p>
+                  </div>
+                )}
+
+                {/* Description */}
+                {selectedIncident.description && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-gray-400" />
+                      Description
+                    </h4>
+                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-wrap">{selectedIncident.description}</p>
+                  </div>
+                )}
+
+                {/* Timeline */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    Timeline
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-500">Created:</span>
+                      <span className="font-medium text-gray-900">{selectedIncident.created_at || '-'}</span>
+                    </div>
+                    {selectedIncident.updated_at && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <RefreshCw className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-500">Updated:</span>
+                        <span className="font-medium text-gray-900">{selectedIncident.updated_at}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Reported At:</span>
-                        <span className="font-medium">{new Date(selectedIncident.created_at).toLocaleString()}</span>
+                    )}
+                    {selectedIncident.resolved_at && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <CheckCircle className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-500">Resolved:</span>
+                        <span className="font-medium text-gray-900">{selectedIncident.resolved_at}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Last Updated:</span>
-                        <span className="font-medium">{new Date(selectedIncident.updated_at).toLocaleString()}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reporter */}
+                {selectedIncident.reported_by_details && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      Added By
+                    </h4>
+                    <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-[#0B1D3A] text-white flex items-center justify-center text-sm font-bold">
+                        {selectedIncident.reported_by_details.employee_name?.charAt(0) || '?'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{selectedIncident.reported_by_details.employee_name}</p>
+                        <p className="text-xs text-gray-500">{selectedIncident.reported_by_details.department || ''}</p>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3">Description</h3>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedIncident.description || 'No description provided'}</p>
-                  </div>
-                </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-end gap-3 rounded-b-2xl">
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleEdit(selectedIncident);
+                  }}
+                  className="px-4 py-2 bg-[#0B1D3A] text-white rounded-lg text-sm font-semibold hover:bg-[#132D5E] transition-all flex items-center gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
