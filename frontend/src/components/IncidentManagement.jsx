@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import React, { useEffect, useState, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import axios from "axios";
 import {
   Plus,
   Search,
@@ -39,8 +39,11 @@ import {
   Ambulance,
   Shield,
   Wrench,
-  Eye
-} from 'lucide-react';
+  Eye,
+  Camera,
+  ArrowLeft,
+  Maximize2,
+} from "lucide-react";
 
 const incidentsApi = `${import.meta.env.VITE_API_URL}/incidents`;
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
@@ -53,42 +56,46 @@ function Incidents() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
-  const [activeTab, setActiveTab] = useState('list');
+  const [activeTab, setActiveTab] = useState("list");
   const [editingId, setEditingId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState(null);
-  
+
+  //states for camera
+  const [showCamModal, setShowCamModal] = useState(false);
+  const [activeCam, setActiveCam] = useState(null); // null means grid view, number means full screen
+
   // Filter States
   const [filters, setFilters] = useState({
-    search: '',
-    incident_status: '',
-    severity_level: '',
-    incident_type: '',
-    room_id: '',
-    reported_by: '',
-    from_date: '',
-    to_date: '',
-    sort_by: 'created_at',
-    sort_order: 'DESC'
+    search: "",
+    incident_status: "",
+    severity_level: "",
+    incident_type: "",
+    room_id: "",
+    reported_by: "",
+    from_date: "",
+    to_date: "",
+    sort_by: "created_at",
+    sort_order: "DESC",
   });
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
-  
+
   // UI States
-  const [message, setMessage] = useState({ type: '', text: '' });
-  
+  const [message, setMessage] = useState({ type: "", text: "" });
+
   // Form Data
   const [formData, setFormData] = useState({
-    incident_type: '',
-    incident_title: '',
-    location_details: '',
-    description: '',
-    severity_level: 'MEDIUM',
-    incident_status: 'OPEN',
-    reported_by: ''
+    incident_type: "",
+    incident_title: "",
+    location_details: "",
+    description: "",
+    severity_level: "MEDIUM",
+    incident_status: "OPEN",
+    reported_by: "",
   });
 
   // Statistics
@@ -103,12 +110,12 @@ function Incidents() {
     high_severity: 0,
     critical_severity: 0,
     total_people_affected: 0,
-    avg_resolution_hours: 0
+    avg_resolution_hours: 0,
   });
 
   // Incident Types Summary
   const [incidentTypes, setIncidentTypes] = useState([]);
-  
+
   // Status Summary
   const [statusSummary, setStatusSummary] = useState([]);
 
@@ -125,44 +132,60 @@ function Incidents() {
       fetchIncidents();
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [filters.search, filters.incident_status, filters.severity_level, filters.incident_type, filters.room_id, currentPage]);
+  }, [
+    filters.search,
+    filters.incident_status,
+    filters.severity_level,
+    filters.incident_type,
+    filters.room_id,
+    currentPage,
+  ]);
 
   useEffect(() => {
     if (message.text) {
-      const timer = setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+      const timer = setTimeout(() => setMessage({ type: "", text: "" }), 5000);
       return () => clearTimeout(timer);
     }
   }, [message]);
 
   const getAuthConfig = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   };
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${incidentsApi}/statistics`, getAuthConfig());
+      const response = await axios.get(
+        `${incidentsApi}/statistics`,
+        getAuthConfig(),
+      );
       setStats(response.data.data.overview);
     } catch (err) {
-      console.error('Error fetching stats:', err);
+      console.error("Error fetching stats:", err);
     }
   };
 
   const fetchIncidentTypes = async () => {
     try {
-      const response = await axios.get(`${incidentsApi}/types/summary`, getAuthConfig());
+      const response = await axios.get(
+        `${incidentsApi}/types/summary`,
+        getAuthConfig(),
+      );
       setIncidentTypes(response.data.data || []);
     } catch (err) {
-      console.error('Error fetching incident types:', err);
+      console.error("Error fetching incident types:", err);
     }
   };
 
   const fetchStatusSummary = async () => {
     try {
-      const response = await axios.get(`${incidentsApi}/status/summary`, getAuthConfig());
+      const response = await axios.get(
+        `${incidentsApi}/status/summary`,
+        getAuthConfig(),
+      );
       setStatusSummary(response.data.data || []);
     } catch (err) {
-      console.error('Error fetching status summary:', err);
+      console.error("Error fetching status summary:", err);
     }
   };
 
@@ -171,7 +194,7 @@ function Incidents() {
       const response = await axios.get(employeesApi, getAuthConfig());
       setEmployees(response.data.data || []);
     } catch (err) {
-      console.error('Error fetching employees:', err);
+      console.error("Error fetching employees:", err);
     }
   };
 
@@ -181,27 +204,37 @@ function Incidents() {
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        ...filters
+        ...filters,
       };
-      
+
       // Remove empty filters
-      Object.keys(params).forEach(key => {
-        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+      Object.keys(params).forEach((key) => {
+        if (
+          params[key] === "" ||
+          params[key] === null ||
+          params[key] === undefined
+        ) {
           delete params[key];
         }
       });
-      
-      const response = await axios.get(incidentsApi, { params, ...getAuthConfig() });
+
+      const response = await axios.get(incidentsApi, {
+        params,
+        ...getAuthConfig(),
+      });
       setIncidents(response.data.data || []);
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to fetch incidents' });
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to fetch incidents",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1);
   };
 
@@ -213,16 +246,16 @@ function Incidents() {
 
   const resetFilters = async () => {
     setFilters({
-      search: '',
-      incident_status: '',
-      severity_level: '',
-      incident_type: '',
-      room_id: '',
-      reported_by: '',
-      from_date: '',
-      to_date: '',
-      sort_by: 'created_at',
-      sort_order: 'DESC'
+      search: "",
+      incident_status: "",
+      severity_level: "",
+      incident_type: "",
+      room_id: "",
+      reported_by: "",
+      from_date: "",
+      to_date: "",
+      sort_by: "created_at",
+      sort_order: "DESC",
     });
     setCurrentPage(1);
     await fetchIncidents();
@@ -230,21 +263,21 @@ function Incidents() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const resetForm = () => {
     setFormData({
-      incident_type: '',
-      incident_title: '',
-      location_details: '',
-      description: '',
-      severity_level: 'MEDIUM',
-      incident_status: 'OPEN',
-      reported_by: ''
+      incident_type: "",
+      incident_title: "",
+      location_details: "",
+      description: "",
+      severity_level: "MEDIUM",
+      incident_status: "OPEN",
+      reported_by: "",
     });
     setEditingId(null);
   };
@@ -255,7 +288,7 @@ function Incidents() {
   const titleRef = useRef(null);
 
   useEffect(() => {
-    if (activeTab === 'form') {
+    if (activeTab === "form") {
       try {
         requestAnimationFrame(() => {
           titleRef.current?.focus?.({ preventScroll: true });
@@ -270,20 +303,20 @@ function Incidents() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.incident_type) {
-      setMessage({ type: 'error', text: 'Incident type is required' });
+      setMessage({ type: "error", text: "Incident type is required" });
       return;
     }
-    
+
     if (!formData.incident_title) {
-      setMessage({ type: 'error', text: 'Incident title is required' });
+      setMessage({ type: "error", text: "Incident title is required" });
       return;
     }
-    
+
     try {
       setSaving(true);
-      setMessage({ type: '', text: '' });
+      setMessage({ type: "", text: "" });
 
       const payload = {
         incident_type: formData.incident_type,
@@ -292,28 +325,38 @@ function Incidents() {
         description: formData.description || null,
         severity_level: formData.severity_level,
         incident_status: formData.incident_status,
-        reported_by: user?.id ? Number(user.id) : null
+        reported_by: user?.id ? Number(user.id) : null,
       };
-      
+
       if (editingId) {
-        await axios.put(`${incidentsApi}/${editingId}`, payload, getAuthConfig());
-        setMessage({ type: 'success', text: 'Incident updated successfully' });
+        await axios.put(
+          `${incidentsApi}/${editingId}`,
+          payload,
+          getAuthConfig(),
+        );
+        setMessage({ type: "success", text: "Incident updated successfully" });
       } else {
         await axios.post(incidentsApi, payload, getAuthConfig());
-        setMessage({ type: 'success', text: 'Incident added successfully' });
+        setMessage({ type: "success", text: "Incident added successfully" });
         //window.location.href = "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign";
-        window.open("https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign", "_blank");
+        window.open(
+          "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign",
+          "_blank",
+        );
         // return;
       }
-      
+
       resetForm();
       await fetchIncidents();
       await fetchStats();
       await fetchIncidentTypes();
       await fetchStatusSummary();
-      setActiveTab('list');
+      setActiveTab("list");
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to save incident' });
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to save incident",
+      });
     } finally {
       setSaving(false);
     }
@@ -324,116 +367,154 @@ function Incidents() {
     setFormData({
       incident_type: incident.incident_type,
       incident_title: incident.incident_title,
-      location_details: incident.location_details || '',
-      description: incident.description || '',
+      location_details: incident.location_details || "",
+      description: incident.description || "",
       severity_level: incident.severity_level,
       incident_status: incident.incident_status,
-      reported_by: incident.reported_by || ''
+      reported_by: incident.reported_by || "",
     });
-    setActiveTab('form');
+    setActiveTab("form");
   };
 
   const handleDelete = async (id, title, code) => {
-    if (!window.confirm(`Are you sure you want to delete incident "${title}" (${code})?`)) return;
-    
+    if (
+      !window.confirm(
+        `Are you sure you want to delete incident "${title}" (${code})?`,
+      )
+    )
+      return;
+
     try {
       setDeletingId(id);
       await axios.delete(`${incidentsApi}/${id}`, getAuthConfig());
-      setMessage({ type: 'success', text: 'Incident deleted successfully' });
+      setMessage({ type: "success", text: "Incident deleted successfully" });
       await fetchIncidents();
       await fetchStats();
       await fetchIncidentTypes();
       await fetchStatusSummary();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete incident' });
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to delete incident",
+      });
     } finally {
       setDeletingId(null);
     }
   };
 
   const handleReleaseIncident = async (id) => {
-    if (!window.confirm('Are you sure you want to release this incident?')) return;
+    if (!window.confirm("Are you sure you want to release this incident?"))
+      return;
 
     try {
       setTogglingId(id);
       await axios.put(
         `${incidentsApi}/${id}/release`,
         {
-          release_notes: 'Incident released from incident management',
-          closed_by: user?.id ? Number(user.id) : null
+          release_notes: "Incident released from incident management",
+          closed_by: user?.id ? Number(user.id) : null,
         },
-        getAuthConfig()
+        getAuthConfig(),
       );
-      setMessage({ type: 'success', text: 'Incident released successfully' });
+      setMessage({ type: "success", text: "Incident released successfully" });
       await fetchIncidents();
       await fetchStats();
       await fetchStatusSummary();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to release incident' });
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to release incident",
+      });
     } finally {
       setTogglingId(null);
     }
   };
 
   const getSeverityColor = (severity) => {
-    switch(severity) {
-      case 'LOW': return 'bg-green-100 text-green-800 border-green-200';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'HIGH': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'CRITICAL': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    switch (severity) {
+      case "LOW":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "MEDIUM":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "HIGH":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "CRITICAL":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getSeverityIcon = (severity) => {
-    switch(severity) {
-      case 'LOW': return <CheckCircle className="w-3.5 h-3.5" />;
-      case 'MEDIUM': return <AlertCircle className="w-3.5 h-3.5" />;
-      case 'HIGH': return <AlertTriangle className="w-3.5 h-3.5" />;
-      case 'CRITICAL': return <AlertOctagon className="w-3.5 h-3.5" />;
-      default: return <AlertCircle className="w-3.5 h-3.5" />;
+    switch (severity) {
+      case "LOW":
+        return <CheckCircle className="w-3.5 h-3.5" />;
+      case "MEDIUM":
+        return <AlertCircle className="w-3.5 h-3.5" />;
+      case "HIGH":
+        return <AlertTriangle className="w-3.5 h-3.5" />;
+      case "CRITICAL":
+        return <AlertOctagon className="w-3.5 h-3.5" />;
+      default:
+        return <AlertCircle className="w-3.5 h-3.5" />;
     }
   };
 
   const getSeverityButtonStyle = (level, isActive) => {
-    if (!isActive) return 'border-2 border-gray-200 text-gray-500 bg-white hover:bg-gray-50 hover:border-gray-300';
-    switch(level) {
-      case 'LOW': return 'bg-green-500 text-white border-2 border-green-500 shadow-md shadow-green-200';
-      case 'MEDIUM': return 'bg-yellow-500 text-white border-2 border-yellow-500 shadow-md shadow-yellow-200';
-      case 'HIGH': return 'bg-orange-500 text-white border-2 border-orange-500 shadow-md shadow-orange-200';
-      case 'CRITICAL': return 'bg-red-600 text-white border-2 border-red-600 shadow-md shadow-red-200';
-      default: return 'bg-gray-500 text-white border-2 border-gray-500 shadow-md';
+    if (!isActive)
+      return "border-2 border-gray-200 text-gray-500 bg-white hover:bg-gray-50 hover:border-gray-300";
+    switch (level) {
+      case "LOW":
+        return "bg-green-500 text-white border-2 border-green-500 shadow-md shadow-green-200";
+      case "MEDIUM":
+        return "bg-yellow-500 text-white border-2 border-yellow-500 shadow-md shadow-yellow-200";
+      case "HIGH":
+        return "bg-orange-500 text-white border-2 border-orange-500 shadow-md shadow-orange-200";
+      case "CRITICAL":
+        return "bg-red-600 text-white border-2 border-red-600 shadow-md shadow-red-200";
+      default:
+        return "bg-gray-500 text-white border-2 border-gray-500 shadow-md";
     }
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'OPEN': return 'bg-red-100 text-red-800 border-red-200';
-      case 'IN_PROGRESS': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'RESOLVED': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'CLOSED': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    switch (status) {
+      case "OPEN":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "IN_PROGRESS":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "RESOLVED":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "CLOSED":
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
-      case 'OPEN': return <AlertCircle className="w-3 h-3" />;
-      case 'IN_PROGRESS': return <Clock className="w-3 h-3" />;
-      case 'RESOLVED': return <CheckCircle className="w-3 h-3" />;
-      case 'CLOSED': return <Check className="w-3 h-3" />;
-      default: return <AlertCircle className="w-3 h-3" />;
+    switch (status) {
+      case "OPEN":
+        return <AlertCircle className="w-3 h-3" />;
+      case "IN_PROGRESS":
+        return <Clock className="w-3 h-3" />;
+      case "RESOLVED":
+        return <CheckCircle className="w-3 h-3" />;
+      case "CLOSED":
+        return <Check className="w-3 h-3" />;
+      default:
+        return <AlertCircle className="w-3 h-3" />;
     }
   };
 
   const getIncidentTypeIcon = (type) => {
     const icons = {
-      'FIRE': <Flame className="w-4 h-4" />,
-      'MEDICAL': <Ambulance className="w-4 h-4" />,
-      'SECURITY': <Shield className="w-4 h-4" />,
-      'MAINTENANCE': <Wrench className="w-4 h-4" />,
-      'SAFETY': <AlertTriangle className="w-4 h-4" />,
-      'OTHER': <AlertCircle className="w-4 h-4" />
+      FIRE: <Flame className="w-4 h-4" />,
+      MEDICAL: <Ambulance className="w-4 h-4" />,
+      SECURITY: <Shield className="w-4 h-4" />,
+      MAINTENANCE: <Wrench className="w-4 h-4" />,
+      SAFETY: <AlertTriangle className="w-4 h-4" />,
+      OTHER: <AlertCircle className="w-4 h-4" />,
     };
     return icons[type] || <AlertCircle className="w-4 h-4" />;
   };
@@ -460,29 +541,42 @@ function Incidents() {
                 </div>
                 <h1 className="text-4xl font-bold mb-2">Incident Management</h1>
                 <p className="text-red-100 max-w-2xl">
-                  Track, manage, and resolve facility incidents with real-time monitoring
+                  Track, manage, and resolve facility incidents with real-time
+                  monitoring
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                   <AlertTriangle className="w-5 h-5 mb-2 text-red-300" />
-                  <div className="text-2xl font-bold">{stats.total_incidents}</div>
-                  <div className="text-xs text-white/80 mt-1">Total Incidents</div>
+                  <div className="text-2xl font-bold">
+                    {stats.total_incidents}
+                  </div>
+                  <div className="text-xs text-white/80 mt-1">
+                    Total Incidents
+                  </div>
                 </div>
                 <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                   <Clock className="w-5 h-5 mb-2 text-yellow-300" />
-                  <div className="text-2xl font-bold">{stats.open_incidents}</div>
+                  <div className="text-2xl font-bold">
+                    {stats.open_incidents}
+                  </div>
                   <div className="text-xs text-white/80 mt-1">Open Cases</div>
                 </div>
                 <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                   <Users className="w-5 h-5 mb-2 text-blue-300" />
-                  <div className="text-2xl font-bold">{stats.total_people_affected}</div>
-                  <div className="text-xs text-white/80 mt-1">People Allocated</div>
+                  <div className="text-2xl font-bold">
+                    {stats.total_people_affected}
+                  </div>
+                  <div className="text-xs text-white/80 mt-1">
+                    People Allocated
+                  </div>
                 </div>
                 <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                   <CheckCircle className="w-5 h-5 mb-2 text-green-300" />
-                  <div className="text-2xl font-bold">{stats.resolved_incidents}</div>
+                  <div className="text-2xl font-bold">
+                    {stats.resolved_incidents}
+                  </div>
                   <div className="text-xs text-white/80 mt-1">Resolved</div>
                 </div>
               </div>
@@ -495,18 +589,18 @@ function Incidents() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 flex gap-1">
             <button
               onClick={() => {
-                setActiveTab('list');
-                setMessage({ type: '', text: '' });
+                setActiveTab("list");
+                setMessage({ type: "", text: "" });
               }}
               className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                  activeTab === 'list' 
-                    ? 'bg-[#0B1D3A] text-white shadow-md' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                activeTab === "list"
+                  ? "bg-[#0B1D3A] text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Grid className="w-4 h-4" />
               Incidents List
-              {incidents.length > 0 && activeTab !== 'list' && (
+              {incidents.length > 0 && activeTab !== "list" && (
                 <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
                   {incidents.length}
                 </span>
@@ -515,16 +609,16 @@ function Incidents() {
             <button
               onClick={() => {
                 resetForm();
-                setActiveTab('form');
+                setActiveTab("form");
               }}
               className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'form' 
-                  ? 'bg-[#0B1D3A] text-white shadow-md' 
-                  : 'text-gray-600 hover:bg-gray-50'
+                activeTab === "form"
+                  ? "bg-[#0B1D3A] text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Plus className="w-4 h-4" />
-              {editingId ? 'Edit Incident' : 'Add Incident'}
+              {editingId ? "Edit Incident" : "Add Incident"}
             </button>
             {/* <button
               onClick={() => setActiveTab('analytics')}
@@ -542,25 +636,27 @@ function Incidents() {
 
         {/* Messages */}
         {message.text && (
-          <div className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
-            message.type === 'success' 
-              ? 'bg-green-50 border border-green-200 text-green-800' 
-              : 'bg-red-50 border border-red-200 text-red-800'
-          }`}>
-            {message.type === 'success' ? (
+          <div
+            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
+              message.type === "success"
+                ? "bg-green-50 border border-green-200 text-green-800"
+                : "bg-red-50 border border-red-200 text-red-800"
+            }`}
+          >
+            {message.type === "success" ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             )}
             <p className="flex-1 text-sm">{message.text}</p>
-            <button onClick={() => setMessage({ type: '', text: '' })}>
+            <button onClick={() => setMessage({ type: "", text: "" })}>
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {/* Analytics Section */}
-        {activeTab === 'analytics' && (
+        {activeTab === "analytics" && (
           <div className="space-y-6">
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -569,9 +665,13 @@ function Incidents() {
                   <div className="p-3 bg-red-100 rounded-xl">
                     <AlertTriangle className="w-6 h-6 text-red-600" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{stats.total_incidents}</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {stats.total_incidents}
+                  </span>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">Total Incidents</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Total Incidents
+                </h3>
                 <p className="text-xs text-gray-500 mt-1">All incidents</p>
               </div>
 
@@ -580,9 +680,13 @@ function Incidents() {
                   <div className="p-3 bg-orange-100 rounded-xl">
                     <Clock className="w-6 h-6 text-orange-600" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{stats.open_incidents + stats.in_progress_incidents}</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {stats.open_incidents + stats.in_progress_incidents}
+                  </span>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">Active Cases</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Active Cases
+                </h3>
                 <p className="text-xs text-gray-500 mt-1">Open + In Progress</p>
               </div>
 
@@ -591,10 +695,16 @@ function Incidents() {
                   <div className="p-3 bg-green-100 rounded-xl">
                     <Users className="w-6 h-6 text-green-600" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{stats.total_people_affected}</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {stats.total_people_affected}
+                  </span>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">People Allocated</h3>
-                <p className="text-xs text-gray-500 mt-1">Total impacted individuals</p>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  People Allocated
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total impacted individuals
+                </p>
               </div>
 
               <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
@@ -602,10 +712,16 @@ function Incidents() {
                   <div className="p-3 bg-blue-100 rounded-xl">
                     <Clock className="w-6 h-6 text-blue-600" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{Math.round(stats.avg_resolution_hours || 0)}h</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {Math.round(stats.avg_resolution_hours || 0)}h
+                  </span>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">Avg Resolution Time</h3>
-                <p className="text-xs text-gray-500 mt-1">Average hours to resolve</p>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Avg Resolution Time
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Average hours to resolve
+                </p>
               </div>
             </div>
 
@@ -619,12 +735,16 @@ function Incidents() {
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-gray-700">Critical</span>
-                    <span className="text-gray-600">{stats.critical_severity}</span>
+                    <span className="text-gray-600">
+                      {stats.critical_severity}
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-gradient-to-r from-[#0B1D3A] to-[#1A3A6E] h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(stats.critical_severity / stats.total_incidents) * 100}%` }}
+                      style={{
+                        width: `${(stats.critical_severity / stats.total_incidents) * 100}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -636,19 +756,25 @@ function Incidents() {
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-orange-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(stats.high_severity / stats.total_incidents) * 100}%` }}
+                      style={{
+                        width: `${(stats.high_severity / stats.total_incidents) * 100}%`,
+                      }}
                     />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-gray-700">Medium</span>
-                    <span className="text-gray-600">{stats.medium_severity}</span>
+                    <span className="text-gray-600">
+                      {stats.medium_severity}
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(stats.medium_severity / stats.total_incidents) * 100}%` }}
+                      style={{
+                        width: `${(stats.medium_severity / stats.total_incidents) * 100}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -660,7 +786,9 @@ function Incidents() {
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(stats.low_severity / stats.total_incidents) * 100}%` }}
+                      style={{
+                        width: `${(stats.low_severity / stats.total_incidents) * 100}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -681,18 +809,24 @@ function Incidents() {
                         {getIncidentTypeIcon(type.incident_type)}
                         {type.incident_type}
                       </span>
-                      <span className="text-gray-600">{type.count} incidents</span>
+                      <span className="text-gray-600">
+                        {type.count} incidents
+                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-gradient-to-r from-red-600 to-red-400 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${(type.count / stats.total_incidents) * 100}%` }}
+                        style={{
+                          width: `${(type.count / stats.total_incidents) * 100}%`,
+                        }}
                       />
                     </div>
                   </div>
                 ))}
                 {incidentTypes.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">No incident data available</p>
+                  <p className="text-gray-500 text-center py-8">
+                    No incident data available
+                  </p>
                 )}
               </div>
             </div>
@@ -700,16 +834,23 @@ function Incidents() {
             {/* Status Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {statusSummary.map((status) => (
-                <div key={status.incident_status} className={`p-4 rounded-xl border ${getStatusColor(status.incident_status)}`}>
+                <div
+                  key={status.incident_status}
+                  className={`p-4 rounded-xl border ${getStatusColor(status.incident_status)}`}
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(status.incident_status)}
-                      <span className="font-semibold">{status.incident_status.replace('_', ' ')}</span>
+                      <span className="font-semibold">
+                        {status.incident_status.replace("_", " ")}
+                      </span>
                     </div>
                     <span className="text-2xl font-bold">{status.count}</span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    {status.total_people_affected > 0 && <div>Affected: {status.total_people_affected}</div>}
+                    {status.total_people_affected > 0 && (
+                      <div>Affected: {status.total_people_affected}</div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -718,17 +859,19 @@ function Incidents() {
         )}
 
         {/* Form Section */}
-        {activeTab === 'form' && (
+        {activeTab === "form" && (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingId ? 'Edit Incident' : 'Add New Incident'}
+                {editingId ? "Edit Incident" : "Add New Incident"}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                {editingId ? 'Update incident details' : 'Add a new facility incident'}
+                {editingId
+                  ? "Update incident details"
+                  : "Add a new facility incident"}
               </p>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-5">
@@ -748,13 +891,15 @@ function Incidents() {
                         <option value="FIRE">🔥 Fire</option>
                         <option value="MEDICAL">🚑 Medical Emergency</option>
                         <option value="SECURITY">👮 Security Incident</option>
-                        <option value="MAINTENANCE">🔧 Maintenance Issue</option>
+                        <option value="MAINTENANCE">
+                          🔧 Maintenance Issue
+                        </option>
                         <option value="SAFETY">⚠️ Safety Hazard</option>
                         <option value="OTHER">📋 Other</option>
                       </select>
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Incident Title <span className="text-red-500">*</span>
@@ -769,7 +914,7 @@ function Incidents() {
                       ref={titleRef}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Location Details
@@ -786,28 +931,39 @@ function Incidents() {
                       />
                     </div>
                   </div>
-                  
+
                   {/* Severity Level — Button Group */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Severity Level
                     </label>
                     <div className="flex gap-2">
-                      {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((level) => (
+                      {["LOW", "MEDIUM", "HIGH", "CRITICAL"].map((level) => (
                         <button
                           key={level}
                           type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, severity_level: level }))}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              severity_level: level,
+                            }))
+                          }
                           className={`flex-1 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${getSeverityButtonStyle(level, formData.severity_level === level)}`}
                         >
                           {getSeverityIcon(level)}
-                          {level === 'LOW' ? 'Low' : level === 'MEDIUM' ? 'Medium' : level === 'HIGH' ? 'High' : 'Critical'}
+                          {level === "LOW"
+                            ? "Low"
+                            : level === "MEDIUM"
+                              ? "Medium"
+                              : level === "HIGH"
+                                ? "High"
+                                : "Critical"}
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-5">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -820,12 +976,14 @@ function Incidents() {
                       className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-100"
                     >
                       <option value="OPEN">Open - Initial Entry</option>
-                      <option value="IN_PROGRESS">In Progress - Being Addressed</option>
+                      <option value="IN_PROGRESS">
+                        In Progress - Being Addressed
+                      </option>
                       <option value="RESOLVED">Resolved - Action Taken</option>
                       <option value="CLOSED">Closed - Case Closed</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Description
@@ -841,7 +999,7 @@ function Incidents() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 mt-6 pt-6 border-t">
                 <button
                   type="submit"
@@ -855,8 +1013,12 @@ function Incidents() {
                     </>
                   ) : (
                     <>
-                      {editingId ? <RefreshCw className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                      {editingId ? 'Update Incident' : 'Add Incident'}
+                      {editingId ? (
+                        <RefreshCw className="w-4 h-4" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                      {editingId ? "Update Incident" : "Add Incident"}
                     </>
                   )}
                 </button>
@@ -864,7 +1026,7 @@ function Incidents() {
                   type="button"
                   onClick={() => {
                     resetForm();
-                    if (!editingId) setActiveTab('list');
+                    if (!editingId) setActiveTab("list");
                   }}
                   className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all"
                 >
@@ -876,43 +1038,49 @@ function Incidents() {
         )}
 
         {/* List Section */}
-        {activeTab === 'list' && (
+        {activeTab === "list" && (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             {/* Filters Bar */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Incidents Directory</h2>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Incidents Directory
+                  </h2>
                   <p className="text-sm text-gray-500 mt-1">
                     Track and manage all incidents across your facilities
                   </p>
                 </div>
-                
+
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <Filter className="w-4 h-4" />
-                  {showFilters ? 'Hide Filters' : 'Show Filters'}
+                  {showFilters ? "Hide Filters" : "Show Filters"}
                 </button>
               </div>
 
-              <div className={`mt-4 ${showFilters ? 'block' : 'hidden'}`}>
+              <div className={`mt-4 ${showFilters ? "block" : "hidden"}`}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
                       value={filters.search}
-                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange("search", e.target.value)
+                      }
                       placeholder="Search incidents..."
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm"
                     />
                   </div>
-                  
+
                   <select
                     value={filters.incident_status}
-                    onChange={(e) => handleFilterChange('incident_status', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("incident_status", e.target.value)
+                    }
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                   >
                     <option value="">All Status</option>
@@ -921,10 +1089,12 @@ function Incidents() {
                     <option value="RESOLVED">Resolved</option>
                     <option value="CLOSED">Closed</option>
                   </select>
-                  
+
                   <select
                     value={filters.severity_level}
-                    onChange={(e) => handleFilterChange('severity_level', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("severity_level", e.target.value)
+                    }
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                   >
                     <option value="">All Severity</option>
@@ -933,10 +1103,12 @@ function Incidents() {
                     <option value="HIGH">High</option>
                     <option value="CRITICAL">Critical</option>
                   </select>
-                  
+
                   <select
                     value={filters.incident_type}
-                    onChange={(e) => handleFilterChange('incident_type', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("incident_type", e.target.value)
+                    }
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                   >
                     <option value="">All Types</option>
@@ -947,24 +1119,28 @@ function Incidents() {
                     <option value="SAFETY">Safety</option>
                     <option value="OTHER">Other</option>
                   </select>
-                  
+
                   <input
                     type="date"
                     value={filters.from_date}
-                    onChange={(e) => handleFilterChange('from_date', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("from_date", e.target.value)
+                    }
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                     placeholder="From Date"
                   />
-                  
+
                   <input
                     type="date"
                     value={filters.to_date}
-                    onChange={(e) => handleFilterChange('to_date', e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("to_date", e.target.value)
+                    }
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                     placeholder="To Date"
                   />
                 </div>
-                
+
                 <div className="flex gap-3 mt-3">
                   <button
                     onClick={applyFilters}
@@ -993,14 +1169,25 @@ function Incidents() {
                 <div className="bg-gray-50 rounded-full p-4 mb-4">
                   <AlertTriangle className="w-12 h-12 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">No incidents found</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  No incidents found
+                </h3>
                 <p className="text-gray-500 text-sm mb-4">
-                  {filters.search || filters.incident_status || filters.severity_level || filters.incident_type
-                    ? 'Try adjusting your filters' 
-                    : 'Add your first incident to get started'}
+                  {filters.search ||
+                  filters.incident_status ||
+                  filters.severity_level ||
+                  filters.incident_type
+                    ? "Try adjusting your filters"
+                    : "Add your first incident to get started"}
                 </p>
-                {(filters.search || filters.incident_status || filters.severity_level || filters.incident_type) && (
-                  <button onClick={resetFilters} className="text-red-600 text-sm font-semibold">
+                {(filters.search ||
+                  filters.incident_status ||
+                  filters.severity_level ||
+                  filters.incident_type) && (
+                  <button
+                    onClick={resetFilters}
+                    className="text-red-600 text-sm font-semibold"
+                  >
                     Clear all filters
                   </button>
                 )}
@@ -1010,16 +1197,29 @@ function Incidents() {
                 <table className="min-w-full border border-gray-200 rounded-xl overflow-hidden">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Incident</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Severity</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Incident
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {currentItems.map((incident) => (
-                      <tr key={incident.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={incident.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-4 py-4 align-top">
                           <div className="flex items-start gap-3">
                             <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 text-red-600">
@@ -1027,34 +1227,48 @@ function Incidents() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-semibold text-gray-900">{incident.incident_title}</p>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${incident.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>
-                                  {incident.is_active ? 'Active' : 'Archived'}
+                                <p className="font-semibold text-gray-900">
+                                  {incident.incident_title}
+                                </p>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-xs font-semibold ${incident.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"}`}
+                                >
+                                  {incident.is_active ? "Active" : "Archived"}
                                 </span>
                               </div>
-                              <p className="mt-1 text-xs font-mono text-gray-500">{incident.incident_code}</p>
+                              <p className="mt-1 text-xs font-mono text-gray-500">
+                                {incident.incident_code}
+                              </p>
                               {incident.description && (
-                                <p className="mt-2 max-w-md text-xs text-gray-500 line-clamp-2">{incident.description}</p>
+                                <p className="mt-2 max-w-md text-xs text-gray-500 line-clamp-2">
+                                  {incident.description}
+                                </p>
                               )}
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-4 align-top">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${getSeverityColor(incident.severity_level)}`}>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${getSeverityColor(incident.severity_level)}`}
+                          >
                             {getSeverityIcon(incident.severity_level)}
                             {incident.severity_level}
                           </span>
                         </td>
                         <td className="px-4 py-4 align-top">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${getStatusColor(incident.incident_status)}`}>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${getStatusColor(incident.incident_status)}`}
+                          >
                             {getStatusIcon(incident.incident_status)}
-                            {incident.incident_status.replace('_', ' ')}
+                            {incident.incident_status.replace("_", " ")}
                           </span>
                         </td>
                         <td className="px-4 py-4 align-top text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>{incident.created_at?.split(' ')[0] || '-'}</span>
+                            <span>
+                              {incident.created_at?.split(" ")[0] || "-"}
+                            </span>
                           </div>
                           {incident.reported_by_details && (
                             <p className="mt-1 text-xs text-gray-500">
@@ -1087,11 +1301,15 @@ function Incidents() {
             {!loading && incidents.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between flex-wrap gap-3">
                 <p className="text-sm text-gray-600">
-                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, incidents.length)} of {incidents.length} incidents
+                  Showing {indexOfFirstItem + 1} to{" "}
+                  {Math.min(indexOfLastItem, incidents.length)} of{" "}
+                  {incidents.length} incidents
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
                   >
@@ -1115,8 +1333,8 @@ function Incidents() {
                           onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1 rounded-lg text-sm font-medium ${
                             currentPage === pageNum
-                              ? 'bg-[#0B1D3A] text-white'
-                              : 'border border-gray-300 text-gray-700 hover:bg-white'
+                              ? "bg-[#0B1D3A] text-white"
+                              : "border border-gray-300 text-gray-700 hover:bg-white"
                           }`}
                         >
                           {pageNum}
@@ -1125,7 +1343,9 @@ function Incidents() {
                     })}
                   </div>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
                     disabled={currentPage === totalPages}
                     className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
                   >
@@ -1140,20 +1360,30 @@ function Incidents() {
         {/* Details Modal */}
         {showDetailsModal && selectedIncident && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDetailsModal(false)} />
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowDetailsModal(false)}
+            />
             <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-gradient-to-r from-[#0B1D3A] to-[#1A3A6E] p-6 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-white">{selectedIncident.incident_title}</h3>
-                    <p className="text-sm text-white/70 mt-1 font-mono">{selectedIncident.incident_code}</p>
+                    <h3 className="text-xl font-bold text-white">
+                      {selectedIncident.incident_title}
+                    </h3>
+                    <p className="text-sm text-white/70 mt-1 font-mono">
+                      {selectedIncident.incident_code}
+                    </p>
                   </div>
-                  <button onClick={() => setShowDetailsModal(false)} className="text-white/70 hover:text-white p-2">
+                  <button
+                    onClick={() => setShowDetailsModal(false)}
+                    className="text-white/70 hover:text-white p-2"
+                  >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-6 space-y-6">
                 {/* Quick Info */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -1162,28 +1392,36 @@ function Incidents() {
                       {getIncidentTypeIcon(selectedIncident.incident_type)}
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Type</p>
-                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.incident_type}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {selectedIncident.incident_type}
+                    </p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-gray-50">
                     <div className="flex items-center justify-center gap-1 mb-2">
                       {getSeverityIcon(selectedIncident.severity_level)}
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Severity</p>
-                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.severity_level}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {selectedIncident.severity_level}
+                    </p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-gray-50">
                     <div className="flex items-center justify-center gap-1 mb-2">
                       {getStatusIcon(selectedIncident.incident_status)}
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Status</p>
-                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.incident_status.replace('_', ' ')}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {selectedIncident.incident_status.replace("_", " ")}
+                    </p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-gray-50">
                     <div className="flex items-center justify-center gap-1 mb-2">
                       <Users className="w-4 h-4 text-gray-600" />
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Affected</p>
-                    <p className="text-sm font-semibold text-gray-900">{selectedIncident.people_affected || 0}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {selectedIncident.people_affected || 0}
+                    </p>
                   </div>
                 </div>
 
@@ -1194,7 +1432,9 @@ function Incidents() {
                       <MapPin className="w-4 h-4 text-gray-400" />
                       Location Details
                     </h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">{selectedIncident.location_details}</p>
+                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">
+                      {selectedIncident.location_details}
+                    </p>
                   </div>
                 )}
 
@@ -1205,7 +1445,9 @@ function Incidents() {
                       <FileText className="w-4 h-4 text-gray-400" />
                       Description
                     </h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-wrap">{selectedIncident.description}</p>
+                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl whitespace-pre-wrap">
+                      {selectedIncident.description}
+                    </p>
                   </div>
                 )}
 
@@ -1219,20 +1461,26 @@ function Incidents() {
                     <div className="flex items-center gap-3 text-sm">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <span className="text-gray-500">Created:</span>
-                      <span className="font-medium text-gray-900">{selectedIncident.created_at || '-'}</span>
+                      <span className="font-medium text-gray-900">
+                        {selectedIncident.created_at || "-"}
+                      </span>
                     </div>
                     {selectedIncident.updated_at && (
                       <div className="flex items-center gap-3 text-sm">
                         <RefreshCw className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-500">Updated:</span>
-                        <span className="font-medium text-gray-900">{selectedIncident.updated_at}</span>
+                        <span className="font-medium text-gray-900">
+                          {selectedIncident.updated_at}
+                        </span>
                       </div>
                     )}
                     {selectedIncident.resolved_at && (
                       <div className="flex items-center gap-3 text-sm">
                         <CheckCircle className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-500">Resolved:</span>
-                        <span className="font-medium text-gray-900">{selectedIncident.resolved_at}</span>
+                        <span className="font-medium text-gray-900">
+                          {selectedIncident.resolved_at}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1247,11 +1495,18 @@ function Incidents() {
                     </h4>
                     <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
                       <div className="w-8 h-8 rounded-full bg-[#0B1D3A] text-white flex items-center justify-center text-sm font-bold">
-                        {selectedIncident.reported_by_details.employee_name?.charAt(0) || '?'}
+                        {selectedIncident.reported_by_details.employee_name?.charAt(
+                          0,
+                        ) || "?"}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{selectedIncident.reported_by_details.employee_name}</p>
-                        <p className="text-xs text-gray-500">{selectedIncident.reported_by_details.department || ''}</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {selectedIncident.reported_by_details.employee_name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {selectedIncident.reported_by_details.department ||
+                            ""}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1260,6 +1515,19 @@ function Incidents() {
 
               {/* Modal Actions */}
               <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-end gap-3 rounded-b-2xl">
+                {/*CAMERA BUTTON */}
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    setShowCamModal(true);
+                    setActiveCam(null); // Reset to grid view when opening
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  Cameras
+                </button>
+
                 <button
                   onClick={() => {
                     setShowDetailsModal(false);
@@ -1270,6 +1538,7 @@ function Incidents() {
                   <Edit2 className="w-4 h-4" />
                   Edit
                 </button>
+
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
@@ -1277,6 +1546,84 @@ function Incidents() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showCamModal && (
+          <div className="fixed inset-0 z-50 bg-black/90 flex flex-col p-4 md:p-8">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-6 text-white">
+              <h2 className="text-xl font-bold flex items-center gap-3">
+                {activeCam !== null ? (
+                  <button
+                    onClick={() => setActiveCam(null)}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <Camera className="w-5 h-5" />
+                )}
+                {activeCam !== null
+                  ? `Camera ${activeCam + 1} - Full View`
+                  : "Live Camera Feeds"}
+              </h2>
+              <button
+                onClick={() => setShowCamModal(false)}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-semibold transition-all"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Video Content Area */}
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+              {/* GRID VIEW (Multiple Cams) */}
+              {activeCam === null ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((camIndex) => (
+                    <div
+                      key={camIndex}
+                      onClick={() => setActiveCam(camIndex)}
+                      className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all aspect-video bg-gray-900"
+                    >
+                      {/* Replace src with your actual RTSP/Camera stream URL */}
+                      <video
+                        className="w-full h-full object-cover"
+                        src="https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <span className="text-white font-semibold text-lg drop-shadow-md">
+                          Cam {camIndex + 1}
+                        </span>
+                      </div>
+                      {/* Enlarge icon on hover */}
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 p-2 rounded-full">
+                        <Maximize2 className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* FULL SCREEN VIEW (Single Cam) */
+                <div className="w-full h-full max-w-5xl aspect-video rounded-xl overflow-hidden bg-black border border-white/10">
+                  {/* Replace src with your actual RTSP/Camera stream URL */}
+                  <video
+                    className="w-full h-full object-contain"
+                    src="https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    controls
+                    playsInline
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
