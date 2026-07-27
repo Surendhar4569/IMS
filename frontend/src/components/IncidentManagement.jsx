@@ -44,6 +44,7 @@ import {
   ArrowLeft,
   Maximize2,
 } from "lucide-react";
+import airportVideo from "../assets/ccFootage/airport-footage.mp4";
 
 const incidentsApi = `${import.meta.env.VITE_API_URL}/incidents`;
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
@@ -560,47 +561,47 @@ function Incidents() {
     {
       id: 1,
       name: "Terminal 1 - Main Hall",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      src: airportVideo,
     },
     {
       id: 2,
       name: "Gate A12 - Boarding",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+      src: airportVideo,
     },
     {
       id: 3,
       name: "Baggage Claim",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+      src: airportVideo,
     },
     {
       id: 4,
       name: "Runway 09L - Approach",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+      src: airportVideo,
     },
     {
       id: 5,
       name: "Security Checkpoint B",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+      src: airportVideo,
     },
     {
       id: 6,
       name: "ATC Tower View",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+      src: airportVideo,
     },
     {
       id: 7,
       name: "Parking Garage L2",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+      src: airportVideo,
     },
     {
       id: 8,
       name: "Duty Free Shop",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+      src: airportVideo,
     },
     {
       id: 9,
       name: "Cargo Facility",
-      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+      src: airportVideo,
     },
   ];
 
@@ -1604,7 +1605,7 @@ function Incidents() {
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
                 >
                   <Camera className="w-4 h-4" />
-                  Cameras
+                  CC TV
                 </button>
 
                 <button
@@ -1692,7 +1693,9 @@ function Incidents() {
                         <span className="font-bold text-sm drop-shadow-md">
                           {cam.name}
                         </span>
-                        <span className="text-[10px] opacity-80">{currentTimestamp}</span>
+                        <span className="text-[10px] opacity-80">
+                          {currentTimestamp}
+                        </span>
                       </div>
 
                       {/* CRT Scanline Effect */}
