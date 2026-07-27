@@ -19,7 +19,7 @@ import {
   getTerminalHierarchy,
   getAllRoomsWithHierarchy
 
-} from '../controllers/rooms.controller.js';
+} from '../controllers/rooms.Controller.js';
 
 const roomsRouter = express.Router();
 

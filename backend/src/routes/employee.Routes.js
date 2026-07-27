@@ -11,7 +11,7 @@ import {
   changePassword,
   getEmployeesByRole,
   getEmployeeStats
-} from '../controllers/employee.controller.js';
+} from '../controllers/employee.Controller.js';
 
 const employeeRouter = express.Router();
 

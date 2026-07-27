@@ -11,7 +11,7 @@ import {
   bulkCreateTerminals,
   getTerminalStats,
   searchTerminals
-} from '../controllers/terminals.controller.js';
+} from '../controllers/terminals.Controller.js';
 
 const terminalsRouter = express.Router();
 
