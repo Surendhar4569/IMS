@@ -1666,16 +1666,12 @@ function Incidents() {
                     <div
                       key={cam.id}
                       onClick={() => setActiveCam(cam)}
-                      className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all aspect-video bg-black"
+                      className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all aspect-video bg-black flex items-center justify-center"
                     >
-                      <video
-                        className="w-full h-full object-cover opacity-90"
-                        src={cam.src}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
+                      {/* Center Camera Label */}
+                      <span className="text-white/30 text-3xl font-bold font-mono tracking-widest group-hover:text-white/80 transition-colors">
+                        CAM {cam.id.toString().padStart(2, "0")}
+                      </span>
 
                       {/* CCTV Overlay - Top */}
                       <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start text-xs font-mono text-white bg-gradient-to-b from-black/80 to-transparent">
@@ -1684,7 +1680,7 @@ function Incidents() {
                           REC
                         </span>
                         <span className="text-[10px] opacity-80">
-                          CAM {cam.id.toString().padStart(2, "0")}
+                          ID:{cam.id.toString().padStart(3, "0")}
                         </span>
                       </div>
 
