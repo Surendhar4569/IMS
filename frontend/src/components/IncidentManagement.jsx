@@ -66,6 +66,37 @@ function Incidents() {
   const [showCamModal, setShowCamModal] = useState(false);
   const [activeCam, setActiveCam] = useState(null); // null means grid view, number means full screen
 
+  // State to hold the dynamic time
+  const [currentTimestamp, setCurrentTimestamp] = useState("");
+
+  // Effect to update the clock every second
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+
+      // Format: YYYY-MM-DD HH:MM:SS UTC
+      const year = now.getUTCFullYear();
+      const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(now.getUTCDate()).padStart(2, "0");
+      const hours = String(now.getUTCHours()).padStart(2, "0");
+      const minutes = String(now.getUTCMinutes()).padStart(2, "0");
+      const seconds = String(now.getUTCSeconds()).padStart(2, "0");
+
+      setCurrentTimestamp(
+        `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`,
+      );
+    };
+
+    // Set immediately on mount
+    updateClock();
+
+    // Update every 1 second
+    const intervalId = setInterval(updateClock, 1000);
+
+    // Cleanup interval on unmount to prevent memory leaks
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Filter States
   const [filters, setFilters] = useState({
     search: "",
@@ -524,6 +555,54 @@ function Incidents() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = incidents.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(incidents.length / itemsPerPage);
+
+  const airportCams = [
+    {
+      id: 1,
+      name: "Terminal 1 - Main Hall",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    },
+    {
+      id: 2,
+      name: "Gate A12 - Boarding",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    },
+    {
+      id: 3,
+      name: "Baggage Claim",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    },
+    {
+      id: 4,
+      name: "Runway 09L - Approach",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+    },
+    {
+      id: 5,
+      name: "Security Checkpoint B",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    },
+    {
+      id: 6,
+      name: "ATC Tower View",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+    },
+    {
+      id: 7,
+      name: "Parking Garage L2",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    },
+    {
+      id: 8,
+      name: "Duty Free Shop",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+    },
+    {
+      id: 9,
+      name: "Cargo Facility",
+      src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -1551,7 +1630,7 @@ function Incidents() {
         )}
 
         {showCamModal && (
-          <div className="fixed inset-0 z-50 bg-black/90 flex flex-col p-4 md:p-8">
+          <div className="fixed inset-0 z-50 bg-black/95 flex flex-col p-4 md:p-8">
             {/* Modal Header */}
             <div className="flex justify-between items-center mb-6 text-white">
               <h2 className="text-xl font-bold flex items-center gap-3">
@@ -1566,8 +1645,8 @@ function Incidents() {
                   <Camera className="w-5 h-5" />
                 )}
                 {activeCam !== null
-                  ? `Camera ${activeCam + 1} - Full View`
-                  : "Live Camera Feeds"}
+                  ? `CAM ${activeCam.id} - ${activeCam.name}`
+                  : "Airport CCTV Control Center"}
               </h2>
               <button
                 onClick={() => setShowCamModal(false)}
@@ -1579,49 +1658,90 @@ function Incidents() {
 
             {/* Video Content Area */}
             <div className="flex-1 flex items-center justify-center overflow-hidden">
-              {/* GRID VIEW (Multiple Cams) */}
+              {/* GRID VIEW (9 Cams) */}
               {activeCam === null ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
-                  {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((camIndex) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-7xl">
+                  {airportCams.map((cam) => (
                     <div
-                      key={camIndex}
-                      onClick={() => setActiveCam(camIndex)}
-                      className="relative group cursor-pointer rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all aspect-video bg-gray-900"
+                      key={cam.id}
+                      onClick={() => setActiveCam(cam)}
+                      className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all aspect-video bg-black"
                     >
-                      {/* Replace src with your actual RTSP/Camera stream URL */}
                       <video
-                        className="w-full h-full object-cover"
-                        src="https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+                        className="w-full h-full object-cover opacity-90"
+                        src={cam.src}
                         autoPlay
                         loop
                         muted
                         playsInline
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                        <span className="text-white font-semibold text-lg drop-shadow-md">
-                          Cam {camIndex + 1}
+
+                      {/* CCTV Overlay - Top */}
+                      <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start text-xs font-mono text-white bg-gradient-to-b from-black/80 to-transparent">
+                        <span className="bg-red-600/80 px-1.5 py-0.5 rounded text-[10px] flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{" "}
+                          REC
+                        </span>
+                        <span className="text-[10px] opacity-80">
+                          CAM {cam.id.toString().padStart(2, "0")}
                         </span>
                       </div>
+
+                      {/* CCTV Overlay - Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end text-xs font-mono text-white bg-gradient-to-t from-black/80 to-transparent">
+                        <span className="font-bold text-sm drop-shadow-md">
+                          {cam.name}
+                        </span>
+                        <span className="text-[10px] opacity-80">{currentTimestamp}</span>
+                      </div>
+
+                      {/* CRT Scanline Effect */}
+                      <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15)_1px,transparent_1px,transparent_3px)]"></div>
+
+                      {/* Vignette */}
+                      <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_60px_rgba(0,0,0,0.8)]"></div>
+
                       {/* Enlarge icon on hover */}
-                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 p-2 rounded-full">
-                        <Maximize2 className="w-4 h-4 text-white" />
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 p-3 rounded-full">
+                        <Maximize2 className="w-6 h-6 text-white" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 /* FULL SCREEN VIEW (Single Cam) */
-                <div className="w-full h-full max-w-5xl aspect-video rounded-xl overflow-hidden bg-black border border-white/10">
-                  {/* Replace src with your actual RTSP/Camera stream URL */}
+                <div className="relative w-full h-full max-w-6xl aspect-video rounded-lg overflow-hidden bg-black border border-white/10">
                   <video
-                    className="w-full h-full object-contain"
-                    src="https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+                    className="w-full h-full object-contain opacity-90"
+                    src={activeCam.src}
                     autoPlay
                     loop
                     muted
                     controls
                     playsInline
                   />
+
+                  {/* CCTV Overlay for Full Screen */}
+                  <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-sm font-mono text-white bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
+                    <span className="bg-red-600/80 px-2 py-1 rounded text-xs flex items-center gap-2">
+                      <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>{" "}
+                      REC
+                    </span>
+                    <span className="text-xs">
+                      CAM {activeCam.id.toString().padStart(2, "0")} |{" "}
+                      {activeCam.name}
+                    </span>
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-between items-end text-sm font-mono text-white bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
+                    <span className="opacity-80">
+                      LAT: 40.7128° N | LON: 74.0060° W
+                    </span>
+                    <span className="opacity-80">{currentTimestamp}</span>
+                  </div>
+
+                  {/* CRT Scanline Effect */}
+                  <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15)_1px,transparent_1px,transparent_3px)]"></div>
                 </div>
               )}
             </div>
