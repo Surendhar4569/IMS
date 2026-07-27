@@ -49,6 +49,24 @@ import airportVideo from "../assets/ccFootage/airport-footage.mp4";
 const incidentsApi = `${import.meta.env.VITE_API_URL}/incidents`;
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
 
+const INCIDENT_TYPES = [
+  { value: "RUNWAY_INCURSIONS", label: "Runway Incursions", emoji: "🛬" },
+  { value: "GROUND_HANDLING_ACCIDENTS", label: "Ground Handling Accidents", emoji: "🔧" },
+  { value: "FOREIGN_OBJECT_DEBRIS_FOD", label: "Foreign Object Debris (FOD)", emoji: "🔍" },
+  { value: "SLIPS_TRIPS_FALLS", label: "Slips, Trips and Falls", emoji: "🚶" },
+  { value: "AIRCRAFT_REFUELLING_INCIDENTS", label: "Aircraft Refuelling Incidents", emoji: "⛽" },
+  { value: "WILDLIFE_STRIKES", label: "Wildlife Strikes", emoji: "🦅" },
+  { value: "VEHICLE_COLLISIONS_AIRSIDE", label: "Vehicle Collisions on the Airside", emoji: "🚗" },
+  { value: "PASSENGER_SECURITY_INCIDENTS", label: "Passenger Security Incidents", emoji: "👮" },
+  { value: "FIRE_AND_SMOKE_INCIDENTS", label: "Fire and Smoke Incidents", emoji: "🔥" },
+  { value: "DANGEROUS_GOODS_INCIDENTS", label: "Dangerous Goods Incidents", emoji: "☢️" },
+  { value: "MANUAL_HANDLING_INJURIES", label: "Manual Handling Injuries", emoji: "🏋️" },
+  { value: "EQUIPMENT_FAILURES", label: "Equipment Failures", emoji: "⚙️" },
+  { value: "WEATHER_RELATED_INCIDENTS", label: "Weather-Related Incidents", emoji: "⛈️" },
+  { value: "COMMUNICATION_FAILURES", label: "Communication Failures", emoji: "📡" },
+  { value: "NEAR_MISSSES", label: "Near Misses", emoji: "⚡" },
+];
+
 function Incidents() {
   // State Management
   const [incidents, setIncidents] = useState([]);
@@ -65,7 +83,7 @@ function Incidents() {
 
   //states for camera
   const [showCamModal, setShowCamModal] = useState(false);
-  const [activeCam, setActiveCam] = useState(null); // null means grid view, number means full screen
+  const [activeCam, setActiveCam] = useState(null);
 
   // State to hold the dynamic time
   const [currentTimestamp, setCurrentTimestamp] = useState("");
@@ -74,27 +92,18 @@ function Incidents() {
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-
-      // Format: YYYY-MM-DD HH:MM:SS UTC
       const year = now.getUTCFullYear();
       const month = String(now.getUTCMonth() + 1).padStart(2, "0");
       const day = String(now.getUTCDate()).padStart(2, "0");
       const hours = String(now.getUTCHours()).padStart(2, "0");
       const minutes = String(now.getUTCMinutes()).padStart(2, "0");
       const seconds = String(now.getUTCSeconds()).padStart(2, "0");
-
       setCurrentTimestamp(
         `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`,
       );
     };
-
-    // Set immediately on mount
     updateClock();
-
-    // Update every 1 second
     const intervalId = setInterval(updateClock, 1000);
-
-    // Cleanup interval on unmount to prevent memory leaks
     return () => clearInterval(intervalId);
   }, []);
 
@@ -238,8 +247,6 @@ function Incidents() {
         limit: itemsPerPage,
         ...filters,
       };
-
-      // Remove empty filters
       Object.keys(params).forEach((key) => {
         if (
           params[key] === "" ||
@@ -249,7 +256,6 @@ function Incidents() {
           delete params[key];
         }
       });
-
       const response = await axios.get(incidentsApi, {
         params,
         ...getAuthConfig(),
@@ -316,7 +322,6 @@ function Incidents() {
 
   const { user } = useAuth();
 
-  // ref for title input so we can focus without scrolling
   const titleRef = useRef(null);
 
   useEffect(() => {
@@ -370,12 +375,10 @@ function Incidents() {
       } else {
         await axios.post(incidentsApi, payload, getAuthConfig());
         setMessage({ type: "success", text: "Incident added successfully" });
-        //window.location.href = "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign";
         window.open(
           "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign",
           "_blank",
         );
-        // return;
       }
 
       resetForm();
@@ -524,6 +527,25 @@ function Incidents() {
     }
   };
 
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      const day = date.getDate();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      let hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case "OPEN":
@@ -541,6 +563,21 @@ function Incidents() {
 
   const getIncidentTypeIcon = (type) => {
     const icons = {
+      RUNWAY_INCURSIONS: <AlertTriangle className="w-4 h-4" />,
+      GROUND_HANDLING_ACCIDENTS: <Wrench className="w-4 h-4" />,
+      FOREIGN_OBJECT_DEBRIS_FOD: <Search className="w-4 h-4" />,
+      SLIPS_TRIPS_FALLS: <UserX className="w-4 h-4" />,
+      AIRCRAFT_REFUELLING_INCIDENTS: <Flame className="w-4 h-4" />,
+      WILDLIFE_STRIKES: <AlertOctagon className="w-4 h-4" />,
+      VEHICLE_COLLISIONS_AIRSIDE: <AlertCircle className="w-4 h-4" />,
+      PASSENGER_SECURITY_INCIDENTS: <Shield className="w-4 h-4" />,
+      FIRE_AND_SMOKE_INCIDENTS: <Flame className="w-4 h-4" />,
+      DANGEROUS_GOODS_INCIDENTS: <AlertOctagon className="w-4 h-4" />,
+      MANUAL_HANDLING_INJURIES: <UserX className="w-4 h-4" />,
+      EQUIPMENT_FAILURES: <Wrench className="w-4 h-4" />,
+      WEATHER_RELATED_INCIDENTS: <Clock className="w-4 h-4" />,
+      COMMUNICATION_FAILURES: <Phone className="w-4 h-4" />,
+      NEAR_MISSSES: <AlertCircle className="w-4 h-4" />,
       FIRE: <Flame className="w-4 h-4" />,
       MEDICAL: <Ambulance className="w-4 h-4" />,
       SECURITY: <Shield className="w-4 h-4" />,
@@ -551,6 +588,21 @@ function Incidents() {
     return icons[type] || <AlertCircle className="w-4 h-4" />;
   };
 
+  const getIncidentTypeLabel = (type) => {
+    const found = INCIDENT_TYPES.find((t) => t.value === type);
+    if (found) return found.label;
+    // Fallback for legacy types
+    const legacy = {
+      FIRE: "Fire",
+      MEDICAL: "Medical Emergency",
+      SECURITY: "Security Incident",
+      MAINTENANCE: "Maintenance Issue",
+      SAFETY: "Safety Hazard",
+      OTHER: "Other",
+    };
+    return legacy[type] || type;
+  };
+
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -558,51 +610,15 @@ function Incidents() {
   const totalPages = Math.ceil(incidents.length / itemsPerPage);
 
   const airportCams = [
-    {
-      id: 1,
-      name: "Terminal 1 - Main Hall",
-      src: airportVideo,
-    },
-    {
-      id: 2,
-      name: "Gate A12 - Boarding",
-      src: airportVideo,
-    },
-    {
-      id: 3,
-      name: "Baggage Claim",
-      src: airportVideo,
-    },
-    {
-      id: 4,
-      name: "Runway 09L - Approach",
-      src: airportVideo,
-    },
-    {
-      id: 5,
-      name: "Security Checkpoint B",
-      src: airportVideo,
-    },
-    {
-      id: 6,
-      name: "ATC Tower View",
-      src: airportVideo,
-    },
-    {
-      id: 7,
-      name: "Parking Garage L2",
-      src: airportVideo,
-    },
-    {
-      id: 8,
-      name: "Duty Free Shop",
-      src: airportVideo,
-    },
-    {
-      id: 9,
-      name: "Cargo Facility",
-      src: airportVideo,
-    },
+    { id: 1, name: "Terminal 1 - Main Hall", src: airportVideo },
+    { id: 2, name: "Gate A12 - Boarding", src: airportVideo },
+    { id: 3, name: "Baggage Claim", src: airportVideo },
+    { id: 4, name: "Runway 09L - Approach", src: airportVideo },
+    { id: 5, name: "Security Checkpoint B", src: airportVideo },
+    { id: 6, name: "ATC Tower View", src: airportVideo },
+    { id: 7, name: "Parking Garage L2", src: airportVideo },
+    { id: 8, name: "Duty Free Shop", src: airportVideo },
+    { id: 9, name: "Cargo Facility", src: airportVideo },
   ];
 
   return (
@@ -672,11 +688,10 @@ function Incidents() {
                 setActiveTab("list");
                 setMessage({ type: "", text: "" });
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === "list"
-                  ? "bg-[#0B1D3A] text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === "list"
+                ? "bg-[#0B1D3A] text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-50"
+                }`}
             >
               <Grid className="w-4 h-4" />
               Incidents List
@@ -691,37 +706,24 @@ function Incidents() {
                 resetForm();
                 setActiveTab("form");
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === "form"
-                  ? "bg-[#0B1D3A] text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === "form"
+                ? "bg-[#0B1D3A] text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-50"
+                }`}
             >
               <Plus className="w-4 h-4" />
               {editingId ? "Edit Incident" : "Add Incident"}
             </button>
-            {/* <button
-              onClick={() => setActiveTab('analytics')}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'analytics' 
-                  ? 'bg-[#0B1D3A] text-white shadow-md' 
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </button> */}
           </div>
         </div>
 
         {/* Messages */}
         {message.text && (
           <div
-            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
-              message.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-red-50 border border-red-200 text-red-800"
-            }`}
+            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${message.type === "success"
+              ? "bg-green-50 border border-green-200 text-green-800"
+              : "bg-red-50 border border-red-200 text-red-800"
+              }`}
           >
             {message.type === "success" ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -732,209 +734,6 @@ function Incidents() {
             <button onClick={() => setMessage({ type: "", text: "" })}>
               <X className="w-4 h-4" />
             </button>
-          </div>
-        )}
-
-        {/* Analytics Section */}
-        {activeTab === "analytics" && (
-          <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-red-100 rounded-xl">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {stats.total_incidents}
-                  </span>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-700">
-                  Total Incidents
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">All incidents</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-orange-100 rounded-xl">
-                    <Clock className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {stats.open_incidents + stats.in_progress_incidents}
-                  </span>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-700">
-                  Active Cases
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">Open + In Progress</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-green-100 rounded-xl">
-                    <Users className="w-6 h-6 text-green-600" />
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {stats.total_people_affected}
-                  </span>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-700">
-                  People Allocated
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total impacted individuals
-                </p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <Clock className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {Math.round(stats.avg_resolution_hours || 0)}h
-                  </span>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-700">
-                  Avg Resolution Time
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Average hours to resolve
-                </p>
-              </div>
-            </div>
-
-            {/* Severity Distribution */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <PieChart className="w-5 h-5" />
-                Severity Distribution
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700">Critical</span>
-                    <span className="text-gray-600">
-                      {stats.critical_severity}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-[#0B1D3A] to-[#1A3A6E] h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(stats.critical_severity / stats.total_incidents) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700">High</span>
-                    <span className="text-gray-600">{stats.high_severity}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-orange-500 h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(stats.high_severity / stats.total_incidents) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700">Medium</span>
-                    <span className="text-gray-600">
-                      {stats.medium_severity}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(stats.medium_severity / stats.total_incidents) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700">Low</span>
-                    <span className="text-gray-600">{stats.low_severity}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(stats.low_severity / stats.total_incidents) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Incident Types Distribution */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5" />
-                Incident Types Distribution
-              </h3>
-              <div className="space-y-4">
-                {incidentTypes.map((type) => (
-                  <div key={type.incident_type}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium text-gray-700 flex items-center gap-2">
-                        {getIncidentTypeIcon(type.incident_type)}
-                        {type.incident_type}
-                      </span>
-                      <span className="text-gray-600">
-                        {type.count} incidents
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-red-600 to-red-400 h-2 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${(type.count / stats.total_incidents) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-                {incidentTypes.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">
-                    No incident data available
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Status Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {statusSummary.map((status) => (
-                <div
-                  key={status.incident_status}
-                  className={`p-4 rounded-xl border ${getStatusColor(status.incident_status)}`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(status.incident_status)}
-                      <span className="font-semibold">
-                        {status.incident_status.replace("_", " ")}
-                      </span>
-                    </div>
-                    <span className="text-2xl font-bold">{status.count}</span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {status.total_people_affected > 0 && (
-                      <div>Affected: {status.total_people_affected}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
@@ -968,14 +767,11 @@ function Incidents() {
                         className="w-full pl-10 rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-100"
                       >
                         <option value="">Select Type</option>
-                        <option value="FIRE">🔥 Fire</option>
-                        <option value="MEDICAL">🚑 Medical Emergency</option>
-                        <option value="SECURITY">👮 Security Incident</option>
-                        <option value="MAINTENANCE">
-                          🔧 Maintenance Issue
-                        </option>
-                        <option value="SAFETY">⚠️ Safety Hazard</option>
-                        <option value="OTHER">📋 Other</option>
+                        {INCIDENT_TYPES.map((t) => (
+                          <option key={t.value} value={t.value}>
+                            {t.emoji} {t.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1132,13 +928,22 @@ function Incidents() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <Filter className="w-4 h-4" />
-                  {showFilters ? "Hide Filters" : "Show Filters"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <Filter className="w-4 h-4" />
+                    {showFilters ? "Hide Filters" : "Show Filters"}
+                  </button>
+                  <button
+                    onClick={() => setShowCamModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <Camera className="w-4 h-4" />
+                    CCTV Feed
+                  </button>
+                </div>
               </div>
 
               <div className={`mt-4 ${showFilters ? "block" : "hidden"}`}>
@@ -1192,12 +997,11 @@ function Incidents() {
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                   >
                     <option value="">All Types</option>
-                    <option value="FIRE">Fire</option>
-                    <option value="MEDICAL">Medical</option>
-                    <option value="SECURITY">Security</option>
-                    <option value="MAINTENANCE">Maintenance</option>
-                    <option value="SAFETY">Safety</option>
-                    <option value="OTHER">Other</option>
+                    {INCIDENT_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
                   </select>
 
                   <input
@@ -1254,9 +1058,9 @@ function Incidents() {
                 </h3>
                 <p className="text-gray-500 text-sm mb-4">
                   {filters.search ||
-                  filters.incident_status ||
-                  filters.severity_level ||
-                  filters.incident_type
+                    filters.incident_status ||
+                    filters.severity_level ||
+                    filters.incident_type
                     ? "Try adjusting your filters"
                     : "Add your first incident to get started"}
                 </p>
@@ -1264,13 +1068,13 @@ function Incidents() {
                   filters.incident_status ||
                   filters.severity_level ||
                   filters.incident_type) && (
-                  <button
-                    onClick={resetFilters}
-                    className="text-red-600 text-sm font-semibold"
-                  >
-                    Clear all filters
-                  </button>
-                )}
+                    <button
+                      onClick={resetFilters}
+                      className="text-red-600 text-sm font-semibold"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
               </div>
             ) : (
               <div className="p-6 overflow-x-auto">
@@ -1311,13 +1115,19 @@ function Incidents() {
                                   {incident.incident_title}
                                 </p>
                                 <span
-                                  className={`px-2 py-0.5 rounded-full text-xs font-semibold ${incident.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"}`}
+                                  className={`px-2 py-0.5 rounded-full text-xs font-semibold ${incident.is_active
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-700"
+                                    }`}
                                 >
                                   {incident.is_active ? "Active" : "Archived"}
                                 </span>
                               </div>
                               <p className="mt-1 text-xs font-mono text-gray-500">
                                 {incident.incident_code}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {getIncidentTypeLabel(incident.incident_type)}
                               </p>
                               {incident.description && (
                                 <p className="mt-2 max-w-md text-xs text-gray-500 line-clamp-2">
@@ -1346,9 +1156,7 @@ function Incidents() {
                         <td className="px-4 py-4 align-top text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {incident.created_at?.split(" ")[0] || "-"}
-                            </span>
+                            <span>{formatDateTime(incident.created_at)}</span>
                           </div>
                           {incident.reported_by_details && (
                             <p className="mt-1 text-xs text-gray-500">
@@ -1387,9 +1195,7 @@ function Incidents() {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
                     className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
                   >
@@ -1411,11 +1217,10 @@ function Incidents() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                            currentPage === pageNum
-                              ? "bg-[#0B1D3A] text-white"
-                              : "border border-gray-300 text-gray-700 hover:bg-white"
-                          }`}
+                          className={`px-3 py-1 rounded-lg text-sm font-medium ${currentPage === pageNum
+                            ? "bg-[#0B1D3A] text-white"
+                            : "border border-gray-300 text-gray-700 hover:bg-white"
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -1434,6 +1239,109 @@ function Incidents() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* CCTV Camera Modal */}
+        {showCamModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => {
+                setShowCamModal(false);
+                setActiveCam(null);
+              }}
+            />
+            <div className="relative bg-[#0B1D3A] rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <Camera className="w-5 h-5 text-white" />
+                  <h3 className="text-lg font-bold text-white">
+                    CCTV Live Feed
+                  </h3>
+                  <span className="text-xs text-white/50 font-mono">
+                    {currentTimestamp}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCamModal(false);
+                    setActiveCam(null);
+                  }}
+                  className="text-white/70 hover:text-white p-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Camera Grid / Single View */}
+              <div className="p-4">
+                {activeCam === null ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {airportCams.map((cam) => (
+                      <div
+                        key={cam.id}
+                        className="relative cursor-pointer group rounded-xl overflow-hidden border border-white/10"
+                        onClick={() => setActiveCam(cam.id)}
+                      >
+                        <video
+                          src={cam.src}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-32 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col items-start justify-end p-2">
+                          <p className="text-xs font-semibold text-white">
+                            CAM {cam.id}
+                          </p>
+                          <p className="text-[10px] text-white/70">
+                            {cam.name}
+                          </p>
+                        </div>
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Maximize2 className="w-3 h-3 text-white" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button
+                      onClick={() => setActiveCam(null)}
+                      className="absolute top-3 left-3 z-10 flex items-center gap-1 px-2 py-1 bg-white/20 rounded-lg text-white text-xs font-medium hover:bg-white/30 transition-colors"
+                    >
+                      <ArrowLeft className="w-3 h-3" />
+                      Back to Grid
+                    </button>
+                    <video
+                      src={
+                        airportCams.find((c) => c.id === activeCam)?.src ||
+                        airportVideo
+                      }
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full rounded-xl"
+                      style={{ maxHeight: "70vh" }}
+                    />
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5 bg-black/60 rounded-lg">
+                      <Camera className="w-3 h-3 text-red-400" />
+                      <span className="text-xs font-semibold text-white">
+                        CAM {activeCam} —{" "}
+                        {airportCams.find((c) => c.id === activeCam)?.name}
+                      </span>
+                      <span className="text-[10px] text-white/50 font-mono">
+                        {currentTimestamp}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -1473,7 +1381,7 @@ function Incidents() {
                     </div>
                     <p className="text-xs text-gray-500 mb-1">Type</p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {selectedIncident.incident_type}
+                      {getIncidentTypeLabel(selectedIncident.incident_type)}
                     </p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-gray-50">
@@ -1505,7 +1413,6 @@ function Incidents() {
                   </div>
                 </div>
 
-                {/* Location */}
                 {selectedIncident.location_details && (
                   <div>
                     <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -1518,7 +1425,6 @@ function Incidents() {
                   </div>
                 )}
 
-                {/* Description */}
                 {selectedIncident.description && (
                   <div>
                     <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -1530,8 +1436,6 @@ function Incidents() {
                     </p>
                   </div>
                 )}
-
-                {/* Timeline */}
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-400" />
@@ -1541,32 +1445,25 @@ function Incidents() {
                     <div className="flex items-center gap-3 text-sm">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <span className="text-gray-500">Created:</span>
-                      <span className="font-medium text-gray-900">
-                        {selectedIncident.created_at || "-"}
-                      </span>
+                      <span className="font-medium text-gray-900">{formatDateTime(selectedIncident.created_at)}</span>
                     </div>
                     {selectedIncident.updated_at && (
                       <div className="flex items-center gap-3 text-sm">
                         <RefreshCw className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-500">Updated:</span>
-                        <span className="font-medium text-gray-900">
-                          {selectedIncident.updated_at}
-                        </span>
+                        <span className="font-medium text-gray-900">{formatDateTime(selectedIncident.updated_at)}</span>
                       </div>
                     )}
                     {selectedIncident.resolved_at && (
                       <div className="flex items-center gap-3 text-sm">
                         <CheckCircle className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-500">Resolved:</span>
-                        <span className="font-medium text-gray-900">
-                          {selectedIncident.resolved_at}
-                        </span>
+                        <span className="font-medium text-gray-900">{formatDateTime(selectedIncident.resolved_at)}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Reporter */}
                 {selectedIncident.reported_by_details && (
                   <div>
                     <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -1575,17 +1472,14 @@ function Incidents() {
                     </h4>
                     <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
                       <div className="w-8 h-8 rounded-full bg-[#0B1D3A] text-white flex items-center justify-center text-sm font-bold">
-                        {selectedIncident.reported_by_details.employee_name?.charAt(
-                          0,
-                        ) || "?"}
+                        {selectedIncident.reported_by_details.employee_name?.charAt(0) || "?"}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">
                           {selectedIncident.reported_by_details.employee_name}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {selectedIncident.reported_by_details.department ||
-                            ""}
+                          {selectedIncident.reported_by_details.department || ""}
                         </p>
                       </div>
                     </div>
@@ -1593,21 +1487,7 @@ function Incidents() {
                 )}
               </div>
 
-              {/* Modal Actions */}
               <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex justify-end gap-3 rounded-b-2xl">
-                {/*CAMERA BUTTON */}
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    setShowCamModal(true);
-                    setActiveCam(null); // Reset to grid view when opening
-                  }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
-                >
-                  <Camera className="w-4 h-4" />
-                  CC TV
-                </button>
-
                 <button
                   onClick={() => {
                     setShowDetailsModal(false);
@@ -1618,7 +1498,6 @@ function Incidents() {
                   <Edit2 className="w-4 h-4" />
                   Edit
                 </button>
-
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
@@ -1626,127 +1505,6 @@ function Incidents() {
                   Close
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {showCamModal && (
-          <div className="fixed inset-0 z-50 bg-black/95 flex flex-col p-4 md:p-8">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center mb-6 text-white">
-              <h2 className="text-xl font-bold flex items-center gap-3">
-                {activeCam !== null ? (
-                  <button
-                    onClick={() => setActiveCam(null)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-all"
-                  >
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
-                ) : (
-                  <Camera className="w-5 h-5" />
-                )}
-                {activeCam !== null
-                  ? `CAM ${activeCam.id} - ${activeCam.name}`
-                  : "Airport CCTV Control Center"}
-              </h2>
-              <button
-                onClick={() => setShowCamModal(false)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-semibold transition-all"
-              >
-                Close
-              </button>
-            </div>
-
-            {/* Video Content Area */}
-            <div className="flex-1 flex items-center justify-center overflow-hidden">
-              {/* GRID VIEW (9 Cams) */}
-              {activeCam === null ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-7xl">
-                  {airportCams.map((cam) => (
-                    <div
-                      key={cam.id}
-                      onClick={() => setActiveCam(cam)}
-                      className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all aspect-video bg-black"
-                    >
-                      <video
-                        className="w-full h-full object-cover opacity-90"
-                        src={cam.src}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
-
-                      {/* CCTV Overlay - Top */}
-                      <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start text-xs font-mono text-white bg-gradient-to-b from-black/80 to-transparent">
-                        <span className="bg-red-600/80 px-1.5 py-0.5 rounded text-[10px] flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>{" "}
-                          REC
-                        </span>
-                        <span className="text-[10px] opacity-80">
-                          CAM {cam.id.toString().padStart(2, "0")}
-                        </span>
-                      </div>
-
-                      {/* CCTV Overlay - Bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end text-xs font-mono text-white bg-gradient-to-t from-black/80 to-transparent">
-                        <span className="font-bold text-sm drop-shadow-md">
-                          {cam.name}
-                        </span>
-                        <span className="text-[10px] opacity-80">
-                          {currentTimestamp}
-                        </span>
-                      </div>
-
-                      {/* CRT Scanline Effect */}
-                      <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15)_1px,transparent_1px,transparent_3px)]"></div>
-
-                      {/* Vignette */}
-                      <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_60px_rgba(0,0,0,0.8)]"></div>
-
-                      {/* Enlarge icon on hover */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 p-3 rounded-full">
-                        <Maximize2 className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* FULL SCREEN VIEW (Single Cam) */
-                <div className="relative w-full h-full max-w-6xl aspect-video rounded-lg overflow-hidden bg-black border border-white/10">
-                  <video
-                    className="w-full h-full object-contain opacity-90"
-                    src={activeCam.src}
-                    autoPlay
-                    loop
-                    muted
-                    controls
-                    playsInline
-                  />
-
-                  {/* CCTV Overlay for Full Screen */}
-                  <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-sm font-mono text-white bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
-                    <span className="bg-red-600/80 px-2 py-1 rounded text-xs flex items-center gap-2">
-                      <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>{" "}
-                      REC
-                    </span>
-                    <span className="text-xs">
-                      CAM {activeCam.id.toString().padStart(2, "0")} |{" "}
-                      {activeCam.name}
-                    </span>
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-between items-end text-sm font-mono text-white bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
-                    <span className="opacity-80">
-                      LAT: 40.7128° N | LON: 74.0060° W
-                    </span>
-                    <span className="opacity-80">{currentTimestamp}</span>
-                  </div>
-
-                  {/* CRT Scanline Effect */}
-                  <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15)_1px,transparent_1px,transparent_3px)]"></div>
-                </div>
-              )}
             </div>
           </div>
         )}
