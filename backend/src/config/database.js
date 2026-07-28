@@ -135,7 +135,8 @@ await client.query(`
         is_active BOOLEAN DEFAULT TRUE,
         is_room_allocated BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        checklist_data JSONB
     )
 `)
 

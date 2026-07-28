@@ -91,9 +91,17 @@ const InvestigationManager = () => {
   };
 
   const openModal = (incident) => {
-    const currentEmployeeId = getCurrentEmployeeId();
+    if (incident.checklist_data == null) {
+      showMessage(
+        'error',
+        'Complete the incident checklist before starting the investigation.'
+      );
+      return;
+    }
+
     setSelectedIncident(incident);
     setSelectedInvestigation(null);
+
     setFormData({
       incident_id: incident.id,
       investigation_description: '',
@@ -102,6 +110,7 @@ const InvestigationManager = () => {
       evidence_files: '',
       notes: ''
     });
+
     setIsModalOpen(true);
   };
 
@@ -240,11 +249,10 @@ const InvestigationManager = () => {
 
         {message.text && (
           <div
-            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
-              message.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}
+            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${message.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+              }`}
           >
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -372,14 +380,43 @@ const InvestigationManager = () => {
                         </div>
 
                         <div className="lg:w-[8%] lg:text-right">
-                          <button
+                          {/* <button
                             type="button"
                             onClick={() => openModal(incident)}
                             className="px-3 py-2 rounded-xl bg-[#0B1D3A] text-white text-xs font-semibold hover:bg-[#132D5E] transition-colors inline-flex items-center gap-1.5"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Investigate
-                          </button>
+                          </button> */}
+                          <div className="lg:w-[8%] lg:text-right">
+                            <span
+                              title={
+                                incident.incident_status === "CLOSED"
+                                  ? "Cannot investigate a closed incident"
+                                  : incident.checklist_data == null
+                                    ? "Complete the incident checklist before investigation"
+                                    : "Start investigation"
+                              }
+                              className="inline-block"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => openModal(incident)}
+                                disabled={incident.checklist_data == null || incident.incident_status === "CLOSED"}
+                                className={`
+        px-3 py-2 rounded-xl text-xs font-semibold
+        transition-all inline-flex items-center gap-1.5
+        ${incident.checklist_data != null && incident.incident_status !== "CLOSED"
+                                    ? "bg-[#0B1D3A] text-white hover:bg-[#132D5E] cursor-pointer"
+                                    : "bg-gray-200 text-gray-400 cursor-not-allowed opacity-70"
+                                  }
+      `}
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                {incident.incident_status === "CLOSED" ? "Closed" : "Investigate"}
+                              </button>
+                            </span>
+                          </div>
                         </div>
 
                         <div className="lg:hidden mt-2">

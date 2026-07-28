@@ -93,51 +93,51 @@ export const createIncident = async (req, res) => {
 
 // ==================== GET ALL INCIDENTS ====================
 export const getAllIncidents = async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      incident_status,
-      severity_level,
-      incident_type,
-      from_date,
-      to_date,
-      search,
-    } = req.query;
+    try {
+        const {
+            page = 1,
+            limit = 10,
+            incident_status,
+            severity_level,
+            incident_type,
+            from_date,
+            to_date,
+            search
+        } = req.query;
 
-    const offset = (page - 1) * limit;
-    let queryParams = [];
-    let whereConditions = ["i.is_active = true"];
-    let paramIndex = 1;
+        const offset = (page - 1) * limit;
+        let queryParams = [];
+        let whereConditions = ['i.is_active =  true or i.is_active = false'];
+        let paramIndex = 1;
 
-    // Apply filters
-    if (incident_status) {
-      whereConditions.push(`i.incident_status = $${paramIndex++}`);
-      queryParams.push(incident_status);
-    }
+        // Apply filters
+        if (incident_status) {
+            whereConditions.push(`i.incident_status = $${paramIndex++}`);
+            queryParams.push(incident_status);
+        }
 
-    if (severity_level) {
-      whereConditions.push(`i.severity_level = $${paramIndex++}`);
-      queryParams.push(severity_level);
-    }
+        if (severity_level) {
+            whereConditions.push(`i.severity_level = $${paramIndex++}`);
+            queryParams.push(severity_level);
+        }
 
-    if (incident_type) {
-      whereConditions.push(`i.incident_type = $${paramIndex++}`);
-      queryParams.push(incident_type);
-    }
+        if (incident_type) {
+            whereConditions.push(`i.incident_type = $${paramIndex++}`);
+            queryParams.push(incident_type);
+        }
 
-    if (from_date) {
-      whereConditions.push(`DATE(i.created_at) >= $${paramIndex++}`);
-      queryParams.push(from_date);
-    }
+        if (from_date) {
+            whereConditions.push(`DATE(i.created_at) >= $${paramIndex++}`);
+            queryParams.push(from_date);
+        }
 
-    if (to_date) {
-      whereConditions.push(`DATE(i.created_at) <= $${paramIndex++}`);
-      queryParams.push(to_date);
-    }
+        if (to_date) {
+            whereConditions.push(`DATE(i.created_at) <= $${paramIndex++}`);
+            queryParams.push(to_date);
+        }
 
-    if (search) {
-      whereConditions.push(`(
+        if (search) {
+            whereConditions.push(`(
                 i.incident_code ILIKE $${paramIndex++} OR
                 i.incident_title ILIKE $${paramIndex++} OR
                 i.description ILIKE $${paramIndex++} OR
@@ -646,6 +646,7 @@ export const getActiveIncidentsWithoutRoomAllocation = async (req, res) => {
             FROM Incidents
             WHERE is_active = true 
             AND is_room_allocated = false
+            AND incident_status != 'CLOSED'
             ORDER BY created_at DESC
         `);
 
@@ -668,52 +669,116 @@ export const getActiveIncidentsWithoutRoomAllocation = async (req, res) => {
 };
 
 // ==================== GET ACTIVE INCIDENTS with Room Allocation ====================
+// export const getActiveIncidentsWithRoomAllocation = async (req, res) => {
+//     try {
+//         const result = await pool.query(`
+//             SELECT 
+//                 i.*,
+//                 (
+//                     SELECT CONCAT(first_name, ' ', last_name)
+//                     FROM employees
+//                     WHERE id = i.reported_by
+//                 ) as reported_by_name,
+//                 (
+//                     SELECT COALESCE(jsonb_agg(jsonb_build_object(
+//                         'allocation_id', ira.id,
+//                         'room_id', ira.room_id,
+//                         'no_of_people', ira.no_of_people,
+//                         'note', ira.note,
+//                         'allocated_at', ira.allocated_at,
+//                         'deallocated_at', ira.deallocated_at,
+//                         'allocated_by', CASE WHEN ae.id IS NOT NULL THEN jsonb_build_object('employee_id', ae.id, 'employee_name', CONCAT(ae.first_name, ' ', ae.last_name)) ELSE NULL END
+//                     )), '[]'::jsonb)
+//                     FROM incident_room_allocations ira
+//                     LEFT JOIN employees ae ON ira.allocated_by = ae.id
+//                     WHERE ira.incident_id = i.id
+//                 ) as room_allocations
+//             FROM incidents i
+//             WHERE i.is_active = true 
+//             AND i.is_room_allocated = true
+//             ORDER BY i.created_at DESC
+//         `);
+
+//         res.status(200).json({
+//             success: true,
+//             count: result.rows.length,
+//             data: result.rows
+//         });
+//     } catch (error) {
+//         console.error('Error fetching active incidents with room allocation:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Internal server error',
+//             error: error.message
+//         });
+//     }
+// };
+
 export const getActiveIncidentsWithRoomAllocation = async (req, res) => {
   try {
     const result = await pool.query(`
             SELECT 
                 i.*,
+
                 (
                     SELECT CONCAT(first_name, ' ', last_name)
                     FROM employees
                     WHERE id = i.reported_by
-                ) as reported_by_name,
+                ) AS reported_by_name,
+
                 (
-                    SELECT COALESCE(jsonb_agg(jsonb_build_object(
-                        'allocation_id', ira.id,
-                        'room_id', ira.room_id,
-                        'no_of_people', ira.no_of_people,
-                        'note', ira.note,
-                        'allocated_at', ira.allocated_at,
-                        'deallocated_at', ira.deallocated_at,
-                        'allocated_by', CASE WHEN ae.id IS NOT NULL THEN jsonb_build_object('employee_id', ae.id, 'employee_name', CONCAT(ae.first_name, ' ', ae.last_name)) ELSE NULL END
-                    )), '[]'::jsonb)
+                    SELECT COALESCE(
+                        jsonb_agg(
+                            jsonb_build_object(
+                                'allocation_id', ira.id,
+                                'room_id', ira.room_id,
+                                'no_of_people', ira.no_of_people,
+                                'note', ira.note,
+                                'allocated_at', ira.allocated_at,
+                                'deallocated_at', ira.deallocated_at,
+                                'allocated_by',
+                                    CASE 
+                                        WHEN ae.id IS NOT NULL THEN 
+                                            jsonb_build_object(
+                                                'employee_id', ae.id,
+                                                'employee_name', CONCAT(ae.first_name, ' ', ae.last_name)
+                                            )
+                                        ELSE NULL 
+                                    END
+                            )
+                            ORDER BY ira.allocated_at DESC
+                        ),
+                        '[]'::jsonb
+                    )
                     FROM incident_room_allocations ira
-                    LEFT JOIN employees ae ON ira.allocated_by = ae.id
+                    LEFT JOIN employees ae 
+                        ON ira.allocated_by = ae.id
                     WHERE ira.incident_id = i.id
-                ) as room_allocations
+                ) AS room_allocations
+
             FROM incidents i
-            WHERE i.is_active = true 
-            AND i.is_room_allocated = true
+
+            WHERE i.is_active = true and i.incident_status != 'CLOSED'
+            
+
             ORDER BY i.created_at DESC
         `);
 
-    res.status(200).json({
-      success: true,
-      count: result.rows.length,
-      data: result.rows,
-    });
-  } catch (error) {
-    console.error(
-      "Error fetching active incidents with room allocation:",
-      error,
-    );
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
+        res.status(200).json({
+            success: true,
+            count: result.rows.length,
+            data: result.rows
+        });
+
+    } catch (error) {
+        console.error('Error fetching active incidents for closure:', error);
+
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
 };
 
 export const submitChecklist = async (req, res) => {
