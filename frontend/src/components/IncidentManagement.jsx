@@ -365,6 +365,11 @@ function Incidents() {
       return;
     }
 
+    if (!formData.description) {
+      setMessage({ type: "error", text: "Description is required" });
+      return;
+    }
+
     try {
       setSaving(true);
       setMessage({ type: "", text: "" });
@@ -391,7 +396,7 @@ function Incidents() {
         setMessage({ type: "success", text: "Incident added successfully" });
         //window.location.href = "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign";
         window.open(
-          "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign",
+          `https://ak.voicegateindia.com/gmrlive/login_page.php#createnew&ns=${formData.description}`,
           "_blank",
         );
         // return;
@@ -1049,28 +1054,68 @@ function Incidents() {
                       >
                         <option value="">Select Type</option>
                         <option value="ACCIDENT">💥 Accident</option>
-                        <option value="AIRCRAFT_CRASH">✈️ Aircraft Crash</option>
-                        <option value="AIRCRAFT_REFUELLING">⛽ Aircraft Refuelling Incidents</option>
-                        <option value="ATTACK_ON_PASSENGER">👤 Attack on Passenger</option>
+                        <option value="AIRCRAFT_CRASH">
+                          ✈️ Aircraft Crash
+                        </option>
+                        <option value="AIRCRAFT_REFUELLING">
+                          ⛽ Aircraft Refuelling Incidents
+                        </option>
+                        <option value="ATTACK_ON_PASSENGER">
+                          👤 Attack on Passenger
+                        </option>
                         <option value="BOMB_THREAT">💣 Bomb Threat</option>
-                        <option value="COMMUNICATION_FAILURES">📡 Communication Failures</option>
-                        <option value="DANGEROUS_GOODS">☢️ Dangerous Goods Incidents</option>
-                        <option value="EQUIPMENT_FAILURES">🔩 Equipment Failures</option>
-                        <option value="FIRE_AND_SMOKE">🔥 Fire and Smoke Incidents</option>
-                        <option value="FIRE_IN_AIRCRAFT">🔥 Fire in the Aircraft</option>
-                        <option value="FOREIGN_OBJECT_DEBRIS">🧹 Foreign Object Debris (FOD)</option>
-                        <option value="GROUND_HANDLING_ACCIDENTS">🔧 Ground Handling Accidents</option>
-                        <option value="HIJACK_SITUATION">🚨 Hijack Situation</option>
-                        <option value="INFLIGHT_MASS_CASUALTIES">⚰️ In-flight Mass Casualties</option>
-                        <option value="MANUAL_HANDLING">🏋️ Manual Handling Injuries</option>
-                        <option value="MEDICAL_EMERGENCY">🚑 Medical Emergency</option>
+                        <option value="COMMUNICATION_FAILURES">
+                          📡 Communication Failures
+                        </option>
+                        <option value="DANGEROUS_GOODS">
+                          ☢️ Dangerous Goods Incidents
+                        </option>
+                        <option value="EQUIPMENT_FAILURES">
+                          🔩 Equipment Failures
+                        </option>
+                        <option value="FIRE_AND_SMOKE">
+                          🔥 Fire and Smoke Incidents
+                        </option>
+                        <option value="FIRE_IN_AIRCRAFT">
+                          🔥 Fire in the Aircraft
+                        </option>
+                        <option value="FOREIGN_OBJECT_DEBRIS">
+                          🧹 Foreign Object Debris (FOD)
+                        </option>
+                        <option value="GROUND_HANDLING_ACCIDENTS">
+                          🔧 Ground Handling Accidents
+                        </option>
+                        <option value="HIJACK_SITUATION">
+                          🚨 Hijack Situation
+                        </option>
+                        <option value="INFLIGHT_MASS_CASUALTIES">
+                          ⚰️ In-flight Mass Casualties
+                        </option>
+                        <option value="MANUAL_HANDLING">
+                          🏋️ Manual Handling Injuries
+                        </option>
+                        <option value="MEDICAL_EMERGENCY">
+                          🚑 Medical Emergency
+                        </option>
                         <option value="NEAR_MISSES">⚡ Near Misses</option>
-                        <option value="PASSENGER_SECURITY">👮 Passenger Security Incidents</option>
-                        <option value="RUNWAY_INCURSIONS">✈️ Runway Incursions</option>
-                        <option value="SLIPS_TRIPS_FALLS">⚠️ Slips, Trips and Falls</option>
-                        <option value="VEHICLE_COLLISIONS_AIRSIDE">🚗 Vehicle Collisions on the Airside</option>
-                        <option value="WEATHER_RELATED">🌧️ Weather-Related Incidents</option>
-                        <option value="WILDLIFE_STRIKES">🦅 Wildlife Strikes</option>
+                        <option value="PASSENGER_SECURITY">
+                          👮 Passenger Security Incidents
+                        </option>
+                        <option value="RUNWAY_INCURSIONS">
+                          ✈️ Runway Incursions
+                        </option>
+                        <option value="SLIPS_TRIPS_FALLS">
+                          ⚠️ Slips, Trips and Falls
+                        </option>
+                        <option value="VEHICLE_COLLISIONS_AIRSIDE">
+                          🚗 Vehicle Collisions on the Airside
+                        </option>
+                        <option value="WEATHER_RELATED">
+                          🌧️ Weather-Related Incidents
+                        </option>
+                        <option value="WILDLIFE_STRIKES">
+                          🦅 Wildlife Strikes
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -1161,7 +1206,7 @@ function Incidents() {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Description
+                      Description <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="description"
@@ -1289,26 +1334,56 @@ function Incidents() {
                     <option value="">All Types</option>
                     <option value="ACCIDENT">Accident</option>
                     <option value="AIRCRAFT_CRASH">Aircraft Crash</option>
-                    <option value="AIRCRAFT_REFUELLING">Aircraft Refuelling Incidents</option>
-                    <option value="ATTACK_ON_PASSENGER">Attack on Passenger</option>
+                    <option value="AIRCRAFT_REFUELLING">
+                      Aircraft Refuelling Incidents
+                    </option>
+                    <option value="ATTACK_ON_PASSENGER">
+                      Attack on Passenger
+                    </option>
                     <option value="BOMB_THREAT">Bomb Threat</option>
-                    <option value="COMMUNICATION_FAILURES">Communication Failures</option>
-                    <option value="DANGEROUS_GOODS">Dangerous Goods Incidents</option>
-                    <option value="EQUIPMENT_FAILURES">Equipment Failures</option>
-                    <option value="FIRE_AND_SMOKE">Fire and Smoke Incidents</option>
-                    <option value="FIRE_IN_AIRCRAFT">Fire in the Aircraft</option>
-                    <option value="FOREIGN_OBJECT_DEBRIS">Foreign Object Debris (FOD)</option>
-                    <option value="GROUND_HANDLING_ACCIDENTS">Ground Handling Accidents</option>
+                    <option value="COMMUNICATION_FAILURES">
+                      Communication Failures
+                    </option>
+                    <option value="DANGEROUS_GOODS">
+                      Dangerous Goods Incidents
+                    </option>
+                    <option value="EQUIPMENT_FAILURES">
+                      Equipment Failures
+                    </option>
+                    <option value="FIRE_AND_SMOKE">
+                      Fire and Smoke Incidents
+                    </option>
+                    <option value="FIRE_IN_AIRCRAFT">
+                      Fire in the Aircraft
+                    </option>
+                    <option value="FOREIGN_OBJECT_DEBRIS">
+                      Foreign Object Debris (FOD)
+                    </option>
+                    <option value="GROUND_HANDLING_ACCIDENTS">
+                      Ground Handling Accidents
+                    </option>
                     <option value="HIJACK_SITUATION">Hijack Situation</option>
-                    <option value="INFLIGHT_MASS_CASUALTIES">In-flight Mass Casualties</option>
-                    <option value="MANUAL_HANDLING">Manual Handling Injuries</option>
+                    <option value="INFLIGHT_MASS_CASUALTIES">
+                      In-flight Mass Casualties
+                    </option>
+                    <option value="MANUAL_HANDLING">
+                      Manual Handling Injuries
+                    </option>
                     <option value="MEDICAL_EMERGENCY">Medical Emergency</option>
                     <option value="NEAR_MISSES">Near Misses</option>
-                    <option value="PASSENGER_SECURITY">Passenger Security Incidents</option>
+                    <option value="PASSENGER_SECURITY">
+                      Passenger Security Incidents
+                    </option>
                     <option value="RUNWAY_INCURSIONS">Runway Incursions</option>
-                    <option value="SLIPS_TRIPS_FALLS">Slips, Trips and Falls</option>
-                    <option value="VEHICLE_COLLISIONS_AIRSIDE">Vehicle Collisions on the Airside</option>
-                    <option value="WEATHER_RELATED">Weather-Related Incidents</option>
+                    <option value="SLIPS_TRIPS_FALLS">
+                      Slips, Trips and Falls
+                    </option>
+                    <option value="VEHICLE_COLLISIONS_AIRSIDE">
+                      Vehicle Collisions on the Airside
+                    </option>
+                    <option value="WEATHER_RELATED">
+                      Weather-Related Incidents
+                    </option>
                     <option value="WILDLIFE_STRIKES">Wildlife Strikes</option>
                   </select>
 
@@ -1754,13 +1829,16 @@ function Incidents() {
                     setShowDetailsModal(false);
                   }}
                   disabled={selectedIncident?.incident_status === "CLOSED"}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${selectedIncident?.incident_status === "CLOSED"
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-[#0B1D3A] text-white hover:bg-[#132D5E]"
-                    }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
+                    selectedIncident?.incident_status === "CLOSED"
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-[#0B1D3A] text-white hover:bg-[#132D5E]"
+                  }`}
                 >
                   <Edit2 className="w-4 h-4" />
-                  {selectedIncident?.incident_status === "CLOSED" ? "Closed" : "Edit"}
+                  {selectedIncident?.incident_status === "CLOSED"
+                    ? "Closed"
+                    : "Edit"}
                 </button>
 
                 <button
@@ -2179,7 +2257,7 @@ function Incidents() {
                             {/* Status Badge */}
                             <div className="flex-shrink-0">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold inline-block min-w-[60px] text-center ${getStatusClass(response.status)}`} 
+                                className={`px-3 py-1 rounded-full text-xs font-bold inline-block min-w-[60px] text-center ${getStatusClass(response.status)}`}
                               >
                                 {response.status || "Skipped"}
                               </span>
