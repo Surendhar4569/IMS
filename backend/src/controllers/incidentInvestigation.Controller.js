@@ -7,7 +7,8 @@ export const getAllInvestigations = async (req, res) => {
         const result = await pool.query(`
             SELECT ii.*, 
                    CONCAT(e.first_name, ' ', e.last_name) as investigator_name,
-                   i.incident_title as incident_title
+                   i.incident_title as incident_title,
+                   i.incident_code as incident_code
             FROM Incident_Investigations ii
             LEFT JOIN employees e ON ii.investigator_id = e.id
             LEFT JOIN Incidents i ON ii.incident_id = i.id
