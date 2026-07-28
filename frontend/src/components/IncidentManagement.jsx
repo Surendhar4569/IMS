@@ -430,6 +430,8 @@ function Incidents() {
       setOpenAccordions({ sec1: true });
       setOpenComments({});
       setChecklistResponses({});
+
+      fetchIncidents();
     } catch (err) {
       console.error(err);
     }
