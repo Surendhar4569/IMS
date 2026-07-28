@@ -33,6 +33,9 @@ const InvestigationManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [showInvestigationDetail, setShowInvestigationDetail] = useState(false);
+  const [selectedInvestigationDetail, setSelectedInvestigationDetail] = useState(null);
+
   const [formData, setFormData] = useState({
     incident_id: '',
     investigation_description: '',
@@ -157,7 +160,8 @@ const InvestigationManager = () => {
       }
 
       closeModal();
-      await fetchInvestigations();
+      //await fetchInvestigations();
+      await refreshAll();
     } catch (error) {
       console.error('Error creating investigation:', error);
       showMessage('error', error?.response?.data?.message || 'Failed to save investigation');
@@ -200,6 +204,16 @@ const InvestigationManager = () => {
     if (severity === 'HIGH') return 'bg-red-100 text-red-700 border-red-200';
     if (severity === 'MEDIUM') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
     return 'bg-green-100 text-green-700 border-green-200';
+  };
+
+  const openInvestigationDetail = (investigation) => {
+    setSelectedInvestigationDetail(investigation);
+    setShowInvestigationDetail(true);
+  };
+
+  const closeInvestigationDetail = () => {
+    setSelectedInvestigationDetail(null);
+    setShowInvestigationDetail(false);
   };
 
   return (
@@ -459,67 +473,79 @@ const InvestigationManager = () => {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Recent Investigations</h2>
-                <p className="text-sm text-gray-500">Latest investigation records in the system.</p>
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#0B1D3A]" />
+                  Recent Investigations
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">Latest investigation records in the system</p>
               </div>
               {loadingInvestigations && <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />}
             </div>
-            <div className="divide-y divide-gray-200">
-              {investigations.length === 0 ? (
-                <div className="p-6 text-sm text-gray-500">No investigations recorded yet.</div>
-              ) : (
-                investigations.slice(0, 5).map((investigation) => (
-                  <div key={investigation.id} className="p-6">
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 border border-gray-200">
-                            Investigation #{investigation.id}
-                          </span>
-                          <span className="text-xs text-gray-500">Incident #{investigation.incident_id}</span>
-                        </div>
-                        <p className="mt-2 text-sm font-medium text-gray-900">
-                          {investigation.investigation_description || 'No investigation description provided'}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          {investigation.investigator_name || 'Unassigned'} · {investigation.created_at ? new Date(investigation.created_at).toLocaleDateString() : 'N/A'}
-                        </p>
+
+            {investigations.length === 0 ? (
+              <div className="p-10 text-center">
+                <div className="bg-gray-50 rounded-full p-4 mb-4 mx-auto w-fit">
+                  <FileText className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No investigations yet</h3>
+                <p className="text-gray-500 text-sm">Start an investigation from the active incidents list above</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                {investigations.slice(0, 6).map((investigation) => (
+                  <div
+                    key={investigation.id}
+                    className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden"
+                  >
+                    {/* Card Header */}
+                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0B1D3A]/10 text-[#0B1D3A] border border-[#0B1D3A]/20">
+                          INV-{String(investigation.id).padStart(3, '0')}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          Incident: {investigation.incident_code}
+                        </span>
                       </div>
-                      <button
-                        onClick={() => toggleExpand(investigation.id)}
-                        className="text-xs font-semibold text-[#0B1D3A]"
-                      >
-                        {expandedId === investigation.id ? 'Hide details' : 'View details'}
-                      </button>
                     </div>
 
-                    {expandedId === investigation.id && (
-                      <div className="mt-4 rounded-xl bg-gray-50 border border-gray-200 p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 mb-1">Reason</div>
-                          <div className="text-gray-900">{investigation.reason_for_incident || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 mb-1">Damage Estimate</div>
-                          <div className="text-gray-900">{investigation.total_damage_estimate || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 mb-1">Evidence Files</div>
-                          <div className="text-gray-900 break-all">{investigation.evidence_files || 'None'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 mb-1">Notes</div>
-                          <div className="text-gray-900 whitespace-pre-wrap">{investigation.notes || 'No notes available'}</div>
-                        </div>
+                    {/* Card Body */}
+                    <div className="px-4 py-3 space-y-2">
+                      <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                        {investigation.investigation_description || 'No description provided'}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <User className="w-3.5 h-3.5" />
+                        <span>{investigation.investigator_name || 'Unassigned'}</span>
                       </div>
-                    )}
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{investigation.created_at ? new Date(investigation.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}</span>
+                      </div>
+                      {investigation.reason_for_incident && (
+                        <p className="text-xs text-gray-600 line-clamp-1 italic">
+                          Reason: {investigation.reason_for_incident}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Card Footer */}
+                    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+                      <button
+                        onClick={() => openInvestigationDetail(investigation)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B1D3A] text-white text-xs font-semibold hover:bg-[#132D5E] transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        View Details
+                      </button>
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -528,7 +554,7 @@ const InvestigationManager = () => {
         <div className="fixed inset-0 z-[60] overflow-y-auto">
           <div className="fixed inset-0 bg-gray-900/70" onClick={closeModal}></div>
           <div className="relative min-h-screen flex items-center justify-center px-4 py-8">
-            <div className="relative z-[61] w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="relative z-[61] w-full max-w-6xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] flex flex-col">
               <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
                 <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                   <div>
@@ -564,7 +590,7 @@ const InvestigationManager = () => {
                     <label className="block text-sm font-medium text-gray-700">Investigation Description</label>
                     <textarea
                       name="investigation_description"
-                      rows="3"
+                      rows="8"
                       value={formData.investigation_description}
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -575,7 +601,7 @@ const InvestigationManager = () => {
                     <label className="block text-sm font-medium text-gray-700">Reason for Incident</label>
                     <textarea
                       name="reason_for_incident"
-                      rows="2"
+                      rows="8"
                       value={formData.reason_for_incident}
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -610,7 +636,7 @@ const InvestigationManager = () => {
                     <label className="block text-sm font-medium text-gray-700">Notes</label>
                     <textarea
                       name="notes"
-                      rows="3"
+                      rows="4"
                       value={formData.notes}
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-xl shadow-sm py-2.5 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -637,6 +663,135 @@ const InvestigationManager = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Investigation Detail Modal */}
+      {showInvestigationDetail && selectedInvestigationDetail && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-gray-900/70" onClick={closeInvestigationDetail}></div>
+          <div className="relative min-h-screen flex items-center justify-center px-4 py-8">
+            <div className="relative z-[61] w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+              {/* Modal Header */}
+              <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-[#0B1D3A] to-[#132D5E] text-white flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-5 h-5" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-white/80">
+                      Investigation Details
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold">
+                    INV-{String(selectedInvestigationDetail.id).padStart(3, '0')}
+                  </h3>
+                  <p className="text-sm text-white/70 mt-1">
+                    Linked to Incident #{selectedInvestigationDetail.incident_id}
+                  </p>
+                </div>
+                <button
+                  onClick={closeInvestigationDetail}
+                  className="rounded-lg p-2 text-white/70 hover:text-white hover:bg-white/10"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-6 py-6 space-y-5 overflow-y-auto max-h-[70vh]">
+                {/* Investigation Description */}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-[#0B1D3A]" />
+                    <span className="text-sm font-semibold text-gray-900">Investigation Description</span>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {selectedInvestigationDetail.investigation_description || 'No description provided'}
+                  </p>
+                </div>
+
+                {/* Reason for Incident */}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm font-semibold text-gray-900">Reason for Incident</span>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {selectedInvestigationDetail.reason_for_incident || 'No reason documented'}
+                  </p>
+                </div>
+
+                {/* Damage Estimate */}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldAlert className="w-4 h-4 text-red-600" />
+                    <span className="text-sm font-semibold text-gray-900">Total Damage Estimate</span>
+                  </div>
+                  <p className="text-sm text-gray-700 font-medium">
+                    {selectedInvestigationDetail.total_damage_estimate || 'Not estimated'}
+                  </p>
+                </div>
+
+                {/* Evidence Files */}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-semibold text-gray-900">Evidence Files</span>
+                  </div>
+                  <p className="text-sm text-gray-700 break-all">
+                    {selectedInvestigationDetail.evidence_files || 'No evidence files attached'}
+                  </p>
+                </div>
+
+                {/* Notes */}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-semibold text-gray-900">Notes</span>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {selectedInvestigationDetail.notes || 'No additional notes'}
+                  </p>
+                </div>
+
+                {/* Meta Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <div className="text-xs font-medium text-gray-500 mb-1">Investigator</div>
+                    <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-400" />
+                      {selectedInvestigationDetail.investigator_name || 'Unassigned'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <div className="text-xs font-medium text-gray-500 mb-1">Created On</div>
+                    <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      {selectedInvestigationDetail.created_at
+                        ? new Date(selectedInvestigationDetail.created_at).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                        : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                <button
+                  onClick={closeInvestigationDetail}
+                  className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
