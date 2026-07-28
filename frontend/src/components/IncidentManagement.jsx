@@ -43,9 +43,17 @@ import {
   Camera,
   ArrowLeft,
   Maximize2,
-  Cloud, Plane
+  Cloud,
+  Plane,
+  ClipboardCheck,
+  CheckCircle2,
+  MessageSquare,
+  MinusCircle,
+  ChevronDown,
+  ClipboardList,
 } from "lucide-react";
 import airportVideo from "../assets/ccFootage/airport-footage.mp4";
+import { checklistData } from "../../../backend/src/utils/checkListData.js";
 
 const incidentsApi = `${import.meta.env.VITE_API_URL}/incidents`;
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
@@ -67,6 +75,15 @@ function Incidents() {
   //states for camera
   const [showCamModal, setShowCamModal] = useState(false);
   const [activeCam, setActiveCam] = useState(null); // null means grid view, number means full screen
+
+  //states for checkList
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [openAccordions, setOpenAccordions] = useState({ sec1: true }); // Open first section by default
+  const [openComments, setOpenComments] = useState({}); // Track which comment boxes are open
+  const [checklistResponses, setChecklistResponses] = useState({}); // Stores the Yes/No/NA, comments, and photos
+
+  //states for view checkList
+  const [showViewChecklistModal, setShowViewChecklistModal] = useState(false);
 
   // State to hold the dynamic time
   const [currentTimestamp, setCurrentTimestamp] = useState("");
@@ -256,6 +273,7 @@ function Incidents() {
         ...getAuthConfig(),
       });
       setIncidents(response.data.data || []);
+      console.log(response.data);
     } catch (err) {
       setMessage({
         type: "error",
@@ -392,6 +410,28 @@ function Incidents() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  //submit check list
+  const submitChecklist = async () => {
+    try {
+      // console.log(selectedIncident);
+      const response = await axios.put(`${incidentsApi}/submit-checklist`, {
+        incident_id: selectedIncident.id,
+        checklist_data: checklistResponses,
+      });
+
+      // console.log(response.data);
+      setSelectedIncident(null);
+      setShowChecklistModal(false);
+
+      //reset checklist states
+      setOpenAccordions({ sec1: true });
+      setOpenComments({});
+      setChecklistResponses({});
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -710,10 +750,11 @@ function Incidents() {
                 setActiveTab("list");
                 setMessage({ type: "", text: "" });
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === "list"
-                ? "bg-[#0B1D3A] text-white shadow-md"
-                : "text-gray-600 hover:bg-gray-50"
-                }`}
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === "list"
+                  ? "bg-[#0B1D3A] text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
             >
               <Grid className="w-4 h-4" />
               Incidents List
@@ -728,10 +769,11 @@ function Incidents() {
                 resetForm();
                 setActiveTab("form");
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === "form"
-                ? "bg-[#0B1D3A] text-white shadow-md"
-                : "text-gray-600 hover:bg-gray-50"
-                }`}
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === "form"
+                  ? "bg-[#0B1D3A] text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
             >
               <Plus className="w-4 h-4" />
               {editingId ? "Edit Incident" : "Add Incident"}
@@ -753,10 +795,11 @@ function Incidents() {
         {/* Messages */}
         {message.text && (
           <div
-            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${message.type === "success"
-              ? "bg-green-50 border border-green-200 text-green-800"
-              : "bg-red-50 border border-red-200 text-red-800"
-              }`}
+            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
+              message.type === "success"
+                ? "bg-green-50 border border-green-200 text-green-800"
+                : "bg-red-50 border border-red-200 text-red-800"
+            }`}
           >
             {message.type === "success" ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -1321,9 +1364,9 @@ function Incidents() {
                 </h3>
                 <p className="text-gray-500 text-sm mb-4">
                   {filters.search ||
-                    filters.incident_status ||
-                    filters.severity_level ||
-                    filters.incident_type
+                  filters.incident_status ||
+                  filters.severity_level ||
+                  filters.incident_type
                     ? "Try adjusting your filters"
                     : "Add your first incident to get started"}
                 </p>
@@ -1331,13 +1374,13 @@ function Incidents() {
                   filters.incident_status ||
                   filters.severity_level ||
                   filters.incident_type) && (
-                    <button
-                      onClick={resetFilters}
-                      className="text-red-600 text-sm font-semibold"
-                    >
-                      Clear all filters
-                    </button>
-                  )}
+                  <button
+                    onClick={resetFilters}
+                    className="text-red-600 text-sm font-semibold"
+                  >
+                    Clear all filters
+                  </button>
+                )}
               </div>
             ) : (
               <div className="p-6 overflow-x-auto">
@@ -1413,9 +1456,7 @@ function Incidents() {
                         <td className="px-4 py-4 align-top text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {formatDate(incident.created_at)}
-                            </span>
+                            <span>{formatDate(incident.created_at)}</span>
                           </div>
                           {incident.reported_by_details && (
                             <p className="mt-1 text-xs text-gray-500">
@@ -1425,6 +1466,36 @@ function Incidents() {
                         </td>
                         <td className="px-4 py-4 align-top text-right">
                           <div className="flex justify-end gap-2">
+                            {/* CONDITIONAL CHECKLIST BUTTONS */}
+                            {incident.checklist_data &&
+                            Object.keys(incident.checklist_data).length > 0 ? (
+                              // If data exists: Show View Checklist Button
+                              <button
+                                onClick={() => {
+                                  setSelectedIncident(incident);
+                                  setShowViewChecklistModal(true);
+                                }}
+                                className="px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors flex items-center justify-center gap-1"
+                              >
+                                <ClipboardList className="w-3 h-3" />
+                                View Checklist
+                              </button>
+                            ) : (
+                              // If data is null/empty: Show Fill Checklist Button
+                              <button
+                                onClick={() => {
+                                  setSelectedIncident(incident);
+                                  setChecklistResponses({}); // Clear any old form data
+                                  setShowChecklistModal(true);
+                                }}
+                                className="px-3 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
+                              >
+                                <ClipboardCheck className="w-3 h-3" />
+                                Checklist
+                              </button>
+                            )}
+
+                            {/* view button */}
                             <button
                               onClick={() => {
                                 setSelectedIncident(incident);
@@ -1478,10 +1549,11 @@ function Incidents() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1 rounded-lg text-sm font-medium ${currentPage === pageNum
-                            ? "bg-[#0B1D3A] text-white"
-                            : "border border-gray-300 text-gray-700 hover:bg-white"
-                            }`}
+                          className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                            currentPage === pageNum
+                              ? "bg-[#0B1D3A] text-white"
+                              : "border border-gray-300 text-gray-700 hover:bg-white"
+                          }`}
                         >
                           {pageNum}
                         </button>
@@ -1510,7 +1582,7 @@ function Incidents() {
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setShowDetailsModal(false)}
             />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-gradient-to-r from-[#0B1D3A] to-[#1A3A6E] p-6 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1813,6 +1885,320 @@ function Incidents() {
                   <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15)_1px,transparent_1px,transparent_3px)]"></div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* check list modal */}
+        {showChecklistModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5 text-green-600" />
+                  Fire Suppression Inspection Checklist
+                </h2>
+                <button
+                  onClick={() => setShowChecklistModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Body (Scrollable) */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {checklistData.map((section) => (
+                  <div
+                    key={section.id}
+                    className="border border-gray-200 rounded-lg overflow-hidden"
+                  >
+                    {/* Accordion Header */}
+                    <button
+                      onClick={() =>
+                        setOpenAccordions((prev) => ({
+                          ...prev,
+                          [section.id]: !prev[section.id],
+                        }))
+                      }
+                      className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                    >
+                      <span className="font-semibold text-gray-800 text-left">
+                        {section.title}
+                      </span>
+                      <ChevronDown
+                        className={`w-5 h-5 text-gray-500 transition-transform ${openAccordions[section.id] ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    {/* Accordion Content */}
+                    {openAccordions[section.id] && (
+                      <div className="p-4 space-y-6 bg-white">
+                        {section.items.map((item) => {
+                          const currentResponse = checklistResponses[
+                            item.id
+                          ] || { status: null, comment: "", photoName: "" };
+                          const isCommentOpen = openComments[item.id];
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="border-b border-gray-100 pb-4 last:border-b-0"
+                            >
+                              <p className="font-medium text-gray-700 mb-3">
+                                {item.text}
+                              </p>
+
+                              {/* Buttons Row */}
+                              <div className="flex flex-wrap items-center gap-2 mb-3">
+                                {/* Yes/No/NA Buttons */}
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      setChecklistResponses((prev) => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          ...prev[item.id],
+                                          status: "Yes",
+                                        },
+                                      }))
+                                    }
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1 transition-all ${currentResponse.status === "Yes" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" /> Yes
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setChecklistResponses((prev) => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          ...prev[item.id],
+                                          status: "No",
+                                        },
+                                      }))
+                                    }
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1 transition-all ${currentResponse.status === "No" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                  >
+                                    <X className="w-4 h-4" /> No
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setChecklistResponses((prev) => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          ...prev[item.id],
+                                          status: "N/A",
+                                        },
+                                      }))
+                                    }
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1 transition-all ${currentResponse.status === "N/A" ? "bg-gray-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                                  >
+                                    <MinusCircle className="w-4 h-4" /> N/A
+                                  </button>
+                                </div>
+                                <div className="flex-grow"></div> {/* Spacer */}
+                                {/* Photo & Comment Buttons */}
+                                <div className="flex gap-2">
+                                  {/* <label className="px-3 py-1.5 rounded-md text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-1 cursor-pointer">
+                                    <Camera className="w-4 h-4" /> Photo
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        if (e.target.files[0]) {
+                                          setChecklistResponses((prev) => ({
+                                            ...prev,
+                                            [item.id]: {
+                                              ...prev[item.id],
+                                              photoName: e.target.files[0].name,
+                                            },
+                                          }));
+                                        }
+                                      }}
+                                    />
+                                  </label> */}
+                                  <button
+                                    onClick={() =>
+                                      setOpenComments((prev) => ({
+                                        ...prev,
+                                        [item.id]: !prev[item.id],
+                                      }))
+                                    }
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1 ${isCommentOpen ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700 hover:bg-blue-100"}`}
+                                  >
+                                    <MessageSquare className="w-4 h-4" />{" "}
+                                    Comment
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Conditional UI: Photo Name & Comment Textarea */}
+                              {(isCommentOpen || currentResponse.photoName) && (
+                                <div className="mt-3 ml-4 pl-4 border-l-2 border-gray-200 space-y-3">
+                                  {currentResponse.photoName && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-md">
+                                      <Camera className="w-4 h-4 text-green-600" />
+                                      <span>{currentResponse.photoName}</span>
+                                    </div>
+                                  )}
+
+                                  {isCommentOpen && (
+                                    <textarea
+                                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                      rows={3}
+                                      placeholder="Add remarks or details here..."
+                                      value={currentResponse.comment}
+                                      onChange={(e) =>
+                                        setChecklistResponses((prev) => ({
+                                          ...prev,
+                                          [item.id]: {
+                                            ...prev[item.id],
+                                            comment: e.target.value,
+                                          },
+                                        }))
+                                      }
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
+                <button
+                  onClick={() => setShowChecklistModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitChecklist}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-all flex items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Submit Checklist
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View checklist modal */}
+        {showViewChecklistModal && selectedIncident && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-purple-600" />
+                  Submitted Checklist Data
+                </h2>
+                <button
+                  onClick={() => setShowViewChecklistModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {checklistData.map((section) => (
+                  <div
+                    key={section.id}
+                    className="border border-gray-200 rounded-lg overflow-hidden"
+                  >
+                    {/* Section Title */}
+                    <div className="p-4 bg-gray-50 border-b border-gray-200">
+                      <span className="font-semibold text-gray-800 text-left">
+                        {section.title}
+                      </span>
+                    </div>
+
+                    {/* Section Items */}
+                    <div className="divide-y divide-gray-100">
+                      {section.items.map((item) => {
+                        // Find the matching answer from the backend data
+                        const response =
+                          selectedIncident.checklist_data?.[item.id] || {};
+
+                        // Helper function to color code the status
+                        const getStatusClass = (status) => {
+                          if (status === "Yes")
+                            return "bg-green-100 text-green-800 border border-green-200";
+                          if (status === "No")
+                            return "bg-red-100 text-red-800 border border-red-200";
+                          if (status === "N/A")
+                            return "bg-gray-100 text-gray-800 border border-gray-200";
+                          return "bg-gray-100 text-gray-500 border border-gray-200";
+                        };
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="p-4 flex flex-col sm:flex-row sm:items-start gap-4 bg-white"
+                          >
+                            {/* Question Label */}
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-700 text-sm mb-2">
+                                {item.text}
+                              </p>
+
+                              {/* Show Comment if it exists */}
+                              {response.comment && (
+                                <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-md border border-gray-200">
+                                  <span className="font-semibold text-gray-700">
+                                    Comment:
+                                  </span>{" "}
+                                  {response.comment}
+                                </div>
+                              )}
+
+                              {/* Show Photo Name if it exists */}
+                              {response.photoName && (
+                                <div className="mt-2 text-sm text-gray-600 bg-blue-50 p-2 rounded-md border border-blue-200 flex items-center gap-2 w-fit">
+                                  <Camera className="w-4 h-4 text-blue-600" />
+                                  <span className="font-semibold text-blue-700">
+                                    Photo:
+                                  </span>{" "}
+                                  {response.photoName}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="flex-shrink-0">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-bold inline-block min-w-[60px] text-center ${getStatusClass(response.status)}`} 
+                              >
+                                {response.status || "Skipped"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
+                <button
+                  onClick={() => setShowViewChecklistModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-all"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

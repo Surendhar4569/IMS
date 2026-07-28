@@ -10,7 +10,8 @@ import {
     getIncidentsByRoom,
     updateIncidentStatus,
     getActiveIncidentsWithoutRoomAllocation,
-    getActiveIncidentsWithRoomAllocation
+    getActiveIncidentsWithRoomAllocation,
+    submitChecklist
     // releaseIncident,
     // getIncidentReports
 } from '../controllers/incidents.Controller.js';
@@ -26,6 +27,10 @@ incidentsRouter.get('/active/with-room-allocation', getActiveIncidentsWithRoomAl
 // incidentsRouter.get('/reports', getIncidentReports);
 incidentsRouter.get('/status/summary', getIncidentStatistics);
 incidentsRouter.get('/statistics', getIncidentStatistics);
+
+//checkList routes
+incidentsRouter.put("/submit-checklist", submitChecklist);
+
 incidentsRouter.get('/:id', getIncidentById);
 incidentsRouter.put('/:id', updateIncident);
 //incidentsRouter.put('/:id/release', releaseIncident);
@@ -35,6 +40,7 @@ incidentsRouter.delete('/:id/permanent', permanentDeleteIncident);
 
 // Room specific incidents
 incidentsRouter.get('/rooms/:room_id', getIncidentsByRoom);
+
 
 
 export default incidentsRouter;
