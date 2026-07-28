@@ -542,21 +542,29 @@ function Incidents() {
 
   const getIncidentTypeIcon = (type) => {
     const icons = {
-      RUNWAY_INCURSIONS: <Plane className="w-4 h-4" />,
-      GROUND_HANDLING_ACCIDENTS: <Wrench className="w-4 h-4" />,
-      FOREIGN_OBJECT_DEBRIS: <AlertCircle className="w-4 h-4" />,
-      SLIPS_TRIPS_FALLS: <UserX className="w-4 h-4" />,
+      ACCIDENT: <AlertOctagon className="w-4 h-4" />,
+      AIRCRAFT_CRASH: <AlertOctagon className="w-4 h-4" />,
       AIRCRAFT_REFUELLING: <Flame className="w-4 h-4" />,
-      WILDLIFE_STRIKES: <AlertTriangle className="w-4 h-4" />,
-      VEHICLE_COLLISIONS_AIRSIDE: <AlertOctagon className="w-4 h-4" />,
-      PASSENGER_SECURITY: <Shield className="w-4 h-4" />,
-      FIRE_AND_SMOKE: <Flame className="w-4 h-4" />,
-      DANGEROUS_GOODS: <AlertTriangle className="w-4 h-4" />,
-      MANUAL_HANDLING: <Users className="w-4 h-4" />,
-      EQUIPMENT_FAILURES: <Wrench className="w-4 h-4" />,
-      WEATHER_RELATED: <Cloud className="w-4 h-4" />,
+      ATTACK_ON_PASSENGER: <Shield className="w-4 h-4" />,
+      BOMB_THREAT: <AlertTriangle className="w-4 h-4" />,
       COMMUNICATION_FAILURES: <Phone className="w-4 h-4" />,
+      DANGEROUS_GOODS: <AlertTriangle className="w-4 h-4" />,
+      EQUIPMENT_FAILURES: <Wrench className="w-4 h-4" />,
+      FIRE_AND_SMOKE: <Flame className="w-4 h-4" />,
+      FIRE_IN_AIRCRAFT: <Flame className="w-4 h-4" />,
+      FOREIGN_OBJECT_DEBRIS: <AlertCircle className="w-4 h-4" />,
+      GROUND_HANDLING_ACCIDENTS: <Wrench className="w-4 h-4" />,
+      HIJACK_SITUATION: <AlertOctagon className="w-4 h-4" />,
+      INFLIGHT_MASS_CASUALTIES: <Ambulance className="w-4 h-4" />,
+      MANUAL_HANDLING: <Users className="w-4 h-4" />,
+      MEDICAL_EMERGENCY: <Ambulance className="w-4 h-4" />,
       NEAR_MISSES: <AlertCircle className="w-4 h-4" />,
+      PASSENGER_SECURITY: <Shield className="w-4 h-4" />,
+      RUNWAY_INCURSIONS: <Plane className="w-4 h-4" />,
+      SLIPS_TRIPS_FALLS: <UserX className="w-4 h-4" />,
+      VEHICLE_COLLISIONS_AIRSIDE: <AlertOctagon className="w-4 h-4" />,
+      WEATHER_RELATED: <Cloud className="w-4 h-4" />,
+      WILDLIFE_STRIKES: <AlertTriangle className="w-4 h-4" />,
     };
     return icons[type] || <AlertCircle className="w-4 h-4" />;
   };
@@ -995,21 +1003,29 @@ function Incidents() {
                         className="w-full pl-10 rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-100"
                       >
                         <option value="">Select Type</option>
-                        <option value="RUNWAY_INCURSIONS">✈️ Runway Incursions</option>
-                        <option value="GROUND_HANDLING_ACCIDENTS">🔧 Ground Handling Accidents</option>
-                        <option value="FOREIGN_OBJECT_DEBRIS">🧹 Foreign Object Debris (FOD)</option>
-                        <option value="SLIPS_TRIPS_FALLS">⚠️ Slips, Trips and Falls</option>
+                        <option value="ACCIDENT">💥 Accident</option>
+                        <option value="AIRCRAFT_CRASH">✈️ Aircraft Crash</option>
                         <option value="AIRCRAFT_REFUELLING">⛽ Aircraft Refuelling Incidents</option>
-                        <option value="WILDLIFE_STRIKES">🦅 Wildlife Strikes</option>
-                        <option value="VEHICLE_COLLISIONS_AIRSIDE">🚗 Vehicle Collisions on the Airside</option>
-                        <option value="PASSENGER_SECURITY">👮 Passenger Security Incidents</option>
-                        <option value="FIRE_AND_SMOKE">🔥 Fire and Smoke Incidents</option>
-                        <option value="DANGEROUS_GOODS">☢️ Dangerous Goods Incidents</option>
-                        <option value="MANUAL_HANDLING">🏋️ Manual Handling Injuries</option>
-                        <option value="EQUIPMENT_FAILURES">🔩 Equipment Failures</option>
-                        <option value="WEATHER_RELATED">🌧️ Weather-Related Incidents</option>
+                        <option value="ATTACK_ON_PASSENGER">👤 Attack on Passenger</option>
+                        <option value="BOMB_THREAT">💣 Bomb Threat</option>
                         <option value="COMMUNICATION_FAILURES">📡 Communication Failures</option>
+                        <option value="DANGEROUS_GOODS">☢️ Dangerous Goods Incidents</option>
+                        <option value="EQUIPMENT_FAILURES">🔩 Equipment Failures</option>
+                        <option value="FIRE_AND_SMOKE">🔥 Fire and Smoke Incidents</option>
+                        <option value="FIRE_IN_AIRCRAFT">🔥 Fire in the Aircraft</option>
+                        <option value="FOREIGN_OBJECT_DEBRIS">🧹 Foreign Object Debris (FOD)</option>
+                        <option value="GROUND_HANDLING_ACCIDENTS">🔧 Ground Handling Accidents</option>
+                        <option value="HIJACK_SITUATION">🚨 Hijack Situation</option>
+                        <option value="INFLIGHT_MASS_CASUALTIES">⚰️ In-flight Mass Casualties</option>
+                        <option value="MANUAL_HANDLING">🏋️ Manual Handling Injuries</option>
+                        <option value="MEDICAL_EMERGENCY">🚑 Medical Emergency</option>
                         <option value="NEAR_MISSES">⚡ Near Misses</option>
+                        <option value="PASSENGER_SECURITY">👮 Passenger Security Incidents</option>
+                        <option value="RUNWAY_INCURSIONS">✈️ Runway Incursions</option>
+                        <option value="SLIPS_TRIPS_FALLS">⚠️ Slips, Trips and Falls</option>
+                        <option value="VEHICLE_COLLISIONS_AIRSIDE">🚗 Vehicle Collisions on the Airside</option>
+                        <option value="WEATHER_RELATED">🌧️ Weather-Related Incidents</option>
+                        <option value="WILDLIFE_STRIKES">🦅 Wildlife Strikes</option>
                       </select>
                     </div>
                   </div>
@@ -1226,21 +1242,29 @@ function Incidents() {
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
                   >
                     <option value="">All Types</option>
-                    <option value="RUNWAY_INCURSIONS">Runway Incursions</option>
-                    <option value="GROUND_HANDLING_ACCIDENTS">Ground Handling Accidents</option>
-                    <option value="FOREIGN_OBJECT_DEBRIS">Foreign Object Debris (FOD)</option>
-                    <option value="SLIPS_TRIPS_FALLS">Slips, Trips and Falls</option>
+                    <option value="ACCIDENT">Accident</option>
+                    <option value="AIRCRAFT_CRASH">Aircraft Crash</option>
                     <option value="AIRCRAFT_REFUELLING">Aircraft Refuelling Incidents</option>
-                    <option value="WILDLIFE_STRIKES">Wildlife Strikes</option>
-                    <option value="VEHICLE_COLLISIONS_AIRSIDE">Vehicle Collisions on the Airside</option>
-                    <option value="PASSENGER_SECURITY">Passenger Security Incidents</option>
-                    <option value="FIRE_AND_SMOKE">Fire and Smoke Incidents</option>
-                    <option value="DANGEROUS_GOODS">Dangerous Goods Incidents</option>
-                    <option value="MANUAL_HANDLING">Manual Handling Injuries</option>
-                    <option value="EQUIPMENT_FAILURES">Equipment Failures</option>
-                    <option value="WEATHER_RELATED">Weather-Related Incidents</option>
+                    <option value="ATTACK_ON_PASSENGER">Attack on Passenger</option>
+                    <option value="BOMB_THREAT">Bomb Threat</option>
                     <option value="COMMUNICATION_FAILURES">Communication Failures</option>
+                    <option value="DANGEROUS_GOODS">Dangerous Goods Incidents</option>
+                    <option value="EQUIPMENT_FAILURES">Equipment Failures</option>
+                    <option value="FIRE_AND_SMOKE">Fire and Smoke Incidents</option>
+                    <option value="FIRE_IN_AIRCRAFT">Fire in the Aircraft</option>
+                    <option value="FOREIGN_OBJECT_DEBRIS">Foreign Object Debris (FOD)</option>
+                    <option value="GROUND_HANDLING_ACCIDENTS">Ground Handling Accidents</option>
+                    <option value="HIJACK_SITUATION">Hijack Situation</option>
+                    <option value="INFLIGHT_MASS_CASUALTIES">In-flight Mass Casualties</option>
+                    <option value="MANUAL_HANDLING">Manual Handling Injuries</option>
+                    <option value="MEDICAL_EMERGENCY">Medical Emergency</option>
                     <option value="NEAR_MISSES">Near Misses</option>
+                    <option value="PASSENGER_SECURITY">Passenger Security Incidents</option>
+                    <option value="RUNWAY_INCURSIONS">Runway Incursions</option>
+                    <option value="SLIPS_TRIPS_FALLS">Slips, Trips and Falls</option>
+                    <option value="VEHICLE_COLLISIONS_AIRSIDE">Vehicle Collisions on the Airside</option>
+                    <option value="WEATHER_RELATED">Weather-Related Incidents</option>
+                    <option value="WILDLIFE_STRIKES">Wildlife Strikes</option>
                   </select>
 
                   <input
@@ -1652,13 +1676,17 @@ function Incidents() {
 
                 <button
                   onClick={() => {
-                    setShowDetailsModal(false);
                     handleEdit(selectedIncident);
+                    setShowDetailsModal(false);
                   }}
-                  className="px-4 py-2 bg-[#0B1D3A] text-white rounded-lg text-sm font-semibold hover:bg-[#132D5E] transition-all flex items-center gap-2"
+                  disabled={selectedIncident?.incident_status === "CLOSED"}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${selectedIncident?.incident_status === "CLOSED"
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-[#0B1D3A] text-white hover:bg-[#132D5E]"
+                    }`}
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
+                  {selectedIncident?.incident_status === "CLOSED" ? "Closed" : "Edit"}
                 </button>
 
                 <button
