@@ -38,7 +38,7 @@ const createTables = async () => {
             )
         `);
 
-// employees table
+        // employees table
         await client.query(`
             CREATE TABLE IF NOT EXISTS employees (
                 id SERIAL PRIMARY KEY,
@@ -56,9 +56,9 @@ const createTables = async () => {
             )
         `);
 
-// Building Setup Tables
-//Terminals table
-    await client.query(`
+        // Building Setup Tables
+        //Terminals table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Terminals (
         id SERIAL PRIMARY KEY,
         terminal_name VARCHAR(100) NOT NULL,
@@ -70,8 +70,8 @@ const createTables = async () => {
     )
 `)
 
-// Blocks table
-await client.query(`
+        // Blocks table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Blocks (
         id SERIAL PRIMARY KEY,
         terminal_id INT REFERENCES Terminals(id) ON DELETE CASCADE,
@@ -85,8 +85,8 @@ await client.query(`
     )
 `)
 
-// Floors table
-await client.query(`
+        // Floors table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Floors (
         id SERIAL PRIMARY KEY,
         terminal_id INT REFERENCES Terminals(id) ON DELETE CASCADE,
@@ -100,8 +100,8 @@ await client.query(`
     )
 `)
 
-// Rooms table
-await client.query(`
+        // Rooms table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Rooms (
         id SERIAL PRIMARY KEY,
         terminal_id INT REFERENCES Terminals(id) ON DELETE CASCADE,
@@ -120,8 +120,8 @@ await client.query(`
     )
 `)
 
-// Incidents table
-await client.query(`
+        // Incidents table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Incidents (
         id SERIAL PRIMARY KEY,
         incident_code VARCHAR(100) UNIQUE NOT NULL,
@@ -140,8 +140,8 @@ await client.query(`
     )
 `)
 
-// incident room allocation table
-await client.query(`
+        // incident room allocation table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Incident_Room_Allocations (
         id SERIAL PRIMARY KEY,
         incident_id INT REFERENCES Incidents(id) ON DELETE CASCADE,
@@ -154,8 +154,8 @@ await client.query(`
     )
 `)
 
-//incident investigation table
-await client.query(`
+        //incident investigation table
+        await client.query(`
     CREATE TABLE IF NOT EXISTS Incident_Investigations (
         id SERIAL PRIMARY KEY,
         incident_id INT REFERENCES Incidents(id) ON DELETE CASCADE,
@@ -167,6 +167,25 @@ await client.query(`
         investigator_id INT REFERENCES employees(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+`)
+
+        //post incident review
+        await client.query(`
+    CREATE TABLE IF NOT EXISTS post_incident_reviews (
+        id SERIAL PRIMARY KEY,
+        incident_id INTEGER NOT NULL REFERENCES incidents(id),
+        contributing_factors TEXT,
+        rca TEXT,
+        what_went_well TEXT,
+        what_went_wrong TEXT,
+        lessons_learned TEXT,
+        executive_summary TEXT,
+        recommendations TEXT,
+        action_items JSONB DEFAULT '[]',
+        created_by INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 `)
 
 

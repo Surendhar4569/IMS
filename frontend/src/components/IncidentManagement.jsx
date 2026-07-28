@@ -752,11 +752,10 @@ function Incidents() {
                 setActiveTab("list");
                 setMessage({ type: "", text: "" });
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === "list"
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === "list"
                   ? "bg-[#0B1D3A] text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
-              }`}
+                }`}
             >
               <Grid className="w-4 h-4" />
               Incidents List
@@ -771,11 +770,10 @@ function Incidents() {
                 resetForm();
                 setActiveTab("form");
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === "form"
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === "form"
                   ? "bg-[#0B1D3A] text-white shadow-md"
                   : "text-gray-600 hover:bg-gray-50"
-              }`}
+                }`}
             >
               <Plus className="w-4 h-4" />
               {editingId ? "Edit Incident" : "Add Incident"}
@@ -797,11 +795,10 @@ function Incidents() {
         {/* Messages */}
         {message.text && (
           <div
-            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
-              message.type === "success"
+            className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${message.type === "success"
                 ? "bg-green-50 border border-green-200 text-green-800"
                 : "bg-red-50 border border-red-200 text-red-800"
-            }`}
+              }`}
           >
             {message.type === "success" ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -1366,9 +1363,9 @@ function Incidents() {
                 </h3>
                 <p className="text-gray-500 text-sm mb-4">
                   {filters.search ||
-                  filters.incident_status ||
-                  filters.severity_level ||
-                  filters.incident_type
+                    filters.incident_status ||
+                    filters.severity_level ||
+                    filters.incident_type
                     ? "Try adjusting your filters"
                     : "Add your first incident to get started"}
                 </p>
@@ -1376,13 +1373,13 @@ function Incidents() {
                   filters.incident_status ||
                   filters.severity_level ||
                   filters.incident_type) && (
-                  <button
-                    onClick={resetFilters}
-                    className="text-red-600 text-sm font-semibold"
-                  >
-                    Clear all filters
-                  </button>
-                )}
+                    <button
+                      onClick={resetFilters}
+                      className="text-red-600 text-sm font-semibold"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
               </div>
             ) : (
               <div className="p-6 overflow-x-auto">
@@ -1470,7 +1467,7 @@ function Incidents() {
                           <div className="flex justify-end gap-2">
                             {/* CONDITIONAL CHECKLIST BUTTONS */}
                             {incident.checklist_data &&
-                            Object.keys(incident.checklist_data).length > 0 ? (
+                              Object.keys(incident.checklist_data).length > 0 ? (
                               // If data exists: Show View Checklist Button
                               <button
                                 onClick={() => {
@@ -1551,11 +1548,10 @@ function Incidents() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                            currentPage === pageNum
+                          className={`px-3 py-1 rounded-lg text-sm font-medium ${currentPage === pageNum
                               ? "bg-[#0B1D3A] text-white"
                               : "border border-gray-300 text-gray-700 hover:bg-white"
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -2002,7 +1998,7 @@ function Incidents() {
                                 <div className="flex-grow"></div> {/* Spacer */}
                                 {/* Photo & Comment Buttons */}
                                 <div className="flex gap-2">
-                                  {/* <label className="px-3 py-1.5 rounded-md text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-1 cursor-pointer">
+                                  <label className="px-3 py-1.5 rounded-md text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all flex items-center gap-1 cursor-pointer">
                                     <Camera className="w-4 h-4" /> Photo
                                     <input
                                       type="file"
@@ -2019,7 +2015,7 @@ function Incidents() {
                                         }
                                       }}
                                     />
-                                  </label> */}
+                                  </label>
                                   <button
                                     onClick={() =>
                                       setOpenComments((prev) => ({
@@ -2179,7 +2175,7 @@ function Incidents() {
                             {/* Status Badge */}
                             <div className="flex-shrink-0">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-bold inline-block min-w-[60px] text-center ${getStatusClass(response.status)}`} 
+                                className={`px-3 py-1 rounded-full text-xs font-bold inline-block min-w-[60px] text-center ${getStatusClass(response.status)}`}
                               >
                                 {response.status || "Skipped"}
                               </span>

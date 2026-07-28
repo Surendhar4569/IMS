@@ -12,6 +12,7 @@ import roomsRouter from './src/routes/rooms.Routes.js';
 import incidentsRouter from './src/routes/incidents.Routes.js';
 import incidentRoomAllocationRouter from './src/routes/incidentRoomAllocation.Routes.js';
 import incidentInvestigationRouter from './src/routes/incidentInvesigation.Routes.js';
+import pcaRouter from './src/routes/pca.Routes.js';
 
 dotenv.config();
 
@@ -39,9 +40,11 @@ app.use('/api/terminals', terminalsRouter);
 app.use('/api/blocks', blocksRouter);
 app.use('/api/floors', floorsRouter);
 app.use('/api/rooms', roomsRouter);
-app.use('/api/incidents',incidentsRouter);
+app.use('/api/incidents', incidentsRouter);
 app.use('/api/room-allocations', incidentRoomAllocationRouter);
 app.use("/api/investigations", incidentInvestigationRouter);
+app.use('/api/pca', pcaRouter);
+
 // Health check route
 app.get('/api/health', (req, res) => {
     res.json({ message: 'Server is running', status: 'OK' });
@@ -61,11 +64,11 @@ const startServer = async () => {
         if (!isConnected) {
             throw new Error('Failed to connect to PostgreSQL');
         }
-        
+
         // Create tables and setup database
         await createTables();
-        
-        app.listen(PORT,'0.0.0.0', () => {
+
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Admin Email: ${process.env.ADMIN_EMAIL}`);
             console.log(`Admin Password: ${process.env.ADMIN_PASSWORD}`);
