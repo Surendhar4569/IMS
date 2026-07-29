@@ -515,6 +515,9 @@ const InvestigationManager = () => {
                     {/* Card Body */}
                     <div className="px-4 py-3 space-y-2">
                       <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                        {investigation.incident_title || 'Untitled Incident'}
+                      </p>
+                      <p className="text-xs text-gray-600 line-clamp-2">
                         {investigation.investigation_description || 'No description provided'}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
