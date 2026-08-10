@@ -2014,7 +2014,7 @@ function Incidents() {
                     </button>
 
                     {/* Accordion Content */}
-                    {openAccordions[section.id] && (
+                    {openAccordions[section.id] && ( 
                       <div className="p-4 space-y-6 bg-white">
                         {section.items.map((item) => {
                           const currentResponse = checklistResponses[
