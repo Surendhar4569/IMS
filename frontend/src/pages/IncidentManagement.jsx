@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext.jsx";
 import axios from "axios";
 import {
   Plus,
