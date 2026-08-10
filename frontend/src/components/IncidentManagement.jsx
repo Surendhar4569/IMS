@@ -396,7 +396,7 @@ function Incidents() {
         setMessage({ type: "success", text: "Incident added successfully" });
         //window.location.href = "https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign";
         window.open(
-          `https://ak.voicegateindia.com/gmrlive/login_page.php#createnew&ns=${formData.description}`,
+          `https://ak.voicegateindia.com/gmrlive/index.php?module=CreateCampaign#createnew&ns=${formData.description}`,
           "_blank",
         );
         // return;
@@ -2009,7 +2009,7 @@ function Incidents() {
                     </button>
 
                     {/* Accordion Content */}
-                    {openAccordions[section.id] && (
+                    {openAccordions[section.id] && ( 
                       <div className="p-4 space-y-6 bg-white">
                         {section.items.map((item) => {
                           const currentResponse = checklistResponses[
@@ -2022,7 +2022,7 @@ function Incidents() {
                               key={item.id}
                               className="border-b border-gray-100 pb-4 last:border-b-0"
                             >
-                              <p className="font-medium text-gray-700 mb-3">
+                              <p className="font-small text-gray-700 mb-3">
                                 {item.text}
                               </p>
 
@@ -2224,7 +2224,7 @@ function Incidents() {
                           >
                             {/* Question Label */}
                             <div className="flex-1">
-                              <p className="font-medium text-gray-700 text-sm mb-2">
+                              <p className="font-small text-gray-700 text-base mb-2">
                                 {item.text}
                               </p>
 
