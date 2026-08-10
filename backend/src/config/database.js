@@ -197,6 +197,10 @@ const createTables = async () => {
     );
 `)
 
+        await client.query(`
+            alter table incidents
+            add column if not exists checklist_data JSONB;
+       `);
 
         // Create function to update updated_at timestamp
         await client.query(`

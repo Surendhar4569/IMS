@@ -13,7 +13,7 @@ import {
   getFloorStats,
   getFloorsByLevelRange,
   getFloorHierarchy
-} from '../controllers/floors.Controller.js';
+} from '../controllers/floors.controller.js';
 
 const floorsRouter = express.Router();
 

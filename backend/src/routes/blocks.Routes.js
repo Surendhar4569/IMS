@@ -12,7 +12,7 @@ import {
   getBlockStats,
   getBlockTypes,
   searchBlocks
-} from '../controllers/blocks.controller.js';
+} from '../controllers/blocks.Controller.js';
 
 const blocksRouter = express.Router();
 
