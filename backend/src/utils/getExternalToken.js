@@ -4,9 +4,9 @@ import { pool } from "../config/database.js";
 
 const TOKEN_REFRESH_MINUTES = 9;
 
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
+// const httpsAgent = new https.Agent({
+//   rejectUnauthorized: false,
+// });
 
 export const getExternalToken = async (userId) => {
   const result = await pool.query(
@@ -49,9 +49,9 @@ export const getExternalToken = async (userId) => {
       email: process.env.VOICEGATE_EMAIL,
       password: process.env.VOICEGATE_PASSWORD,
     },
-    {
-      httpsAgent,
-    },
+    // {
+    //   httpsAgent,
+    // },
   );
 
   const newToken = response.data.token;

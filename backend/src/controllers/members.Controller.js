@@ -7,7 +7,7 @@ const httpsAgent = new https.Agent({
 });
 
 export const getMembers = async (req, res) => {
-  const token = await getExternalToken(2);
+  const token = await getExternalToken(4);
   console.log(token);
 
   const response = await axios.get(`${process.env.VOICEGATE_URL}/members/`, {
