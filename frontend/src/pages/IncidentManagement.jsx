@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext.jsx";
 import axios from "axios";
 import {
   Plus,
@@ -52,7 +52,12 @@ import {
   ChevronDown,
   ClipboardList,
 } from "lucide-react";
-import airportVideo from "../assets/ccFootage/airport-footage.mp4";
+import airportVideo1 from "../assets/ccFootage/airport-footage-1.mp4";
+import airportVideo2 from "../assets/ccFootage/airport-footage-2.mp4";
+import airportVideo3 from "../assets/ccFootage/airport-footage-3.mp4";
+import airportVideo4 from "../assets/ccFootage/airport-footage-4.mp4";
+
+
 import { checklistData } from "../../../backend/src/utils/checkListData.js";
 
 const incidentsApi = `${import.meta.env.VITE_API_URL}/incidents`;
@@ -646,47 +651,47 @@ function Incidents() {
     {
       id: 1,
       name: "Terminal 1 - Main Hall",
-      src: airportVideo,
+      src: airportVideo4,
     },
     {
       id: 2,
       name: "Gate A12 - Boarding",
-      src: airportVideo,
+      src: airportVideo1,
     },
     {
       id: 3,
       name: "Baggage Claim",
-      src: airportVideo,
+      src: airportVideo2,
     },
     {
       id: 4,
       name: "Runway 09L - Approach",
-      src: airportVideo,
+      src: airportVideo3,
     },
     {
       id: 5,
       name: "Security Checkpoint B",
-      src: airportVideo,
+      src: airportVideo4,
     },
     {
       id: 6,
       name: "ATC Tower View",
-      src: airportVideo,
+      src: airportVideo1,
     },
     {
       id: 7,
       name: "Parking Garage L2",
-      src: airportVideo,
+      src: airportVideo2,
     },
     {
       id: 8,
       name: "Duty Free Shop",
-      src: airportVideo,
+      src: airportVideo3,
     },
     {
       id: 9,
       name: "Cargo Facility",
-      src: airportVideo,
+      src: airportVideo4,
     },
   ];
 
@@ -1809,7 +1814,7 @@ function Incidents() {
                 {/*CAMERA BUTTON */}
                 <button
                   onClick={() => {
-                    setShowDetailsModal(false);
+                    // setShowDetailsModal(false);
                     setShowCamModal(true);
                     setActiveCam(null); // Reset to grid view when opening
                   }}

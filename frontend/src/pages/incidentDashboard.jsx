@@ -1,27 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+// import {
+// 	AlertTriangle,
+// 	Ambulance,
+// 	ArrowUpRight,
+// 	BarChart3,
+// 	Calendar,
+// 	CheckCircle,
+// 	Clock3,
+// 	Flame,
+// 	Loader,
+// 	MapPin,
+// 	RefreshCw,
+// 	Shield,
+// 	Wrench,
+// 	Users,
+// 	Building2,
+// 	Layers,
+// 	Activity,
+// 	PieChart,
+// 	TrendingUp,
+// 	CircleDot
+// } from 'lucide-react';
 import {
 	AlertTriangle,
 	Ambulance,
 	ArrowUpRight,
 	BarChart3,
+	Bird,
 	Calendar,
 	CheckCircle,
+	CircleDot,
+	Cloud,
 	Clock3,
 	Flame,
+	Fuel,
 	Loader,
 	MapPin,
+	Plane,
+	Radiation,
+	Radio,
 	RefreshCw,
 	Shield,
+	Siren,
+	Skull,
+	Trash2,
+	Truck,
+	UserX,
 	Wrench,
+	Zap,
 	Users,
 	Building2,
 	Layers,
 	Activity,
 	PieChart,
-	TrendingUp,
-	CircleDot
+	TrendingUp
 } from 'lucide-react';
 
 const incidentsApi = `${import.meta.env.VITE_API_URL}/incidents`;
@@ -43,11 +77,29 @@ const statusMeta = {
 };
 
 const typeMeta = {
-	FIRE: { label: 'Fire', icon: Flame, color: '#DC2626' },
-	MEDICAL: { label: 'Medical', icon: Ambulance, color: '#2563EB' },
-	SECURITY: { label: 'Security', icon: Shield, color: '#7C3AED' },
-	MAINTENANCE: { label: 'Maintenance', icon: Wrench, color: '#D97706' },
-	SAFETY: { label: 'Safety', icon: AlertTriangle, color: '#0F766E' },
+	ACCIDENT: { label: 'Accident', icon: AlertTriangle, color: '#EA580C' },
+	AIRCRAFT_CRASH: { label: 'Aircraft Crash', icon: Plane, color: '#991B1B' },
+	AIRCRAFT_REFUELLING: { label: 'Aircraft Refuelling', icon: Fuel, color: '#D97706' },
+	ATTACK_ON_PASSENGER: { label: 'Attack on Passenger', icon: UserX, color: '#7C3AED' },
+	BOMB_THREAT: { label: 'Bomb Threat', icon: Siren, color: '#DC2626' },
+	COMMUNICATION_FAILURES: { label: 'Communication Failures', icon: Radio, color: '#475569' },
+	DANGEROUS_GOODS: { label: 'Dangerous Goods', icon: Radiation, color: '#9333EA' },
+	EQUIPMENT_FAILURES: { label: 'Equipment Failures', icon: Wrench, color: '#B45309' },
+	FIRE_AND_SMOKE: { label: 'Fire and Smoke', icon: Flame, color: '#DC2626' },
+	FIRE_IN_AIRCRAFT: { label: 'Fire in Aircraft', icon: Flame, color: '#B91C1C' },
+	FOREIGN_OBJECT_DEBRIS: { label: 'Foreign Object Debris', icon: Trash2, color: '#0F766E' },
+	GROUND_HANDLING_ACCIDENTS: { label: 'Ground Handling Accidents', icon: Wrench, color: '#A16207' },
+	HIJACK_SITUATION: { label: 'Hijack Situation', icon: Siren, color: '#991B1B' },
+	INFLIGHT_MASS_CASUALTIES: { label: 'In-flight Mass Casualties', icon: Skull, color: '#1C1917' },
+	MANUAL_HANDLING: { label: 'Manual Handling', icon: AlertTriangle, color: '#A16207' },
+	MEDICAL_EMERGENCY: { label: 'Medical Emergency', icon: Ambulance, color: '#2563EB' },
+	NEAR_MISSES: { label: 'Near Misses', icon: Zap, color: '#CA8A04' },
+	PASSENGER_SECURITY: { label: 'Passenger Security', icon: Shield, color: '#7C3AED' },
+	RUNWAY_INCURSIONS: { label: 'Runway Incursions', icon: Plane, color: '#EA580C' },
+	SLIPS_TRIPS_FALLS: { label: 'Slips, Trips & Falls', icon: AlertTriangle, color: '#D97706' },
+	VEHICLE_COLLISIONS_AIRSIDE: { label: 'Vehicle Collisions Airside', icon: Truck, color: '#C2410C' },
+	WEATHER_RELATED: { label: 'Weather Related', icon: Cloud, color: '#0284C7' },
+	WILDLIFE_STRIKES: { label: 'Wildlife Strikes', icon: Bird, color: '#15803D' },
 	OTHER: { label: 'Other', icon: CircleDot, color: '#475569' }
 };
 
@@ -160,9 +212,9 @@ function IncidentDashboard() {
 	const closedIncidents = sortedReports.filter((incident) => incident.incident_status === 'CLOSED').length;
 	const criticalIncidents = sortedReports.filter((incident) => incident.severity_level === 'CRITICAL').length;
 	const highIncidents = sortedReports.filter((incident) => incident.severity_level === 'HIGH').length;
-	const totalPeople = sortedReports.reduce((sum, incident) => sum + (Number(incident.total_people) || 0), 0);
+	// const totalPeople = sortedReports.reduce((sum, incident) => sum + (Number(incident.total_people) || 0), 0);
 	const uniqueRooms = new Set(sortedReports.map((incident) => incident.room_id).filter(Boolean)).size;
-	const averagePeople = totalIncidents ? (totalPeople / totalIncidents).toFixed(1) : '0.0';
+	// const averagePeople = totalIncidents ? (totalPeople / totalIncidents).toFixed(1) : '0.0';
 	const completionRate = totalIncidents ? Math.round((closedIncidents / totalIncidents) * 100) : 0;
 
 	const severityBreakdown = severityOrder.map((severity) => ({
@@ -177,11 +229,24 @@ function IncidentDashboard() {
 		...statusMeta[status]
 	}));
 
-	const incidentTypeBreakdown = Object.entries(typeMeta).map(([type, meta]) => ({
-		type,
-		count: sortedReports.filter((incident) => incident.incident_type === type).length,
-		...meta
-	})).filter((entry) => entry.count > 0);
+	// const incidentTypeBreakdown = Object.entries(typeMeta).map(([type, meta]) => ({
+	// 	type,
+	// 	count: sortedReports.filter((incident) => incident.incident_type === type).length,
+	// 	...meta
+	// })).filter((entry) => entry.count > 0);
+
+	const incidentTypeBreakdown = Object.entries(
+		sortedReports.reduce((acc, incident) => {
+			const type = incident.incident_type || 'OTHER';
+			acc[type] = (acc[type] || 0) + 1;
+			return acc;
+		}, {})
+	)
+		.map(([type, count]) => {
+			const meta = typeMeta[type] || typeMeta.OTHER;
+			return { type, count, ...meta };
+		})
+		.sort((a, b) => b.count - a.count);
 
 	const last7Days = Array.from({ length: 7 }, (_, index) => {
 		const date = new Date();
@@ -251,10 +316,10 @@ function IncidentDashboard() {
 									<Calendar className="h-4 w-4" />
 									{lastSyncedAt ? `Updated ${formatDateTime(lastSyncedAt)}` : 'Waiting for sync'}
 								</span>
-								<span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
+								{/* <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
 									<Users className="h-4 w-4" />
 									{totalPeople} people affected
-								</span>
+								</span> */}
 								<span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5">
 									<Building2 className="h-4 w-4" />
 									{uniqueRooms} rooms involved
@@ -280,12 +345,34 @@ function IncidentDashboard() {
 					</div>
 				)}
 
-				<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+				{/* <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 					{[
 						{ label: 'Total incidents', value: totalIncidents, icon: AlertTriangle, tone: 'from-[#0B1D3A] to-[#16396D]' },
 						{ label: 'Active cases', value: activeIncidents, icon: TrendingUp, tone: 'from-amber-500 to-orange-600' },
 						{ label: 'Closed cases', value: closedIncidents, icon: CheckCircle, tone: 'from-emerald-500 to-green-600' },
-						{ label: 'Avg. people affected', value: averagePeople, icon: Users, tone: 'from-sky-500 to-blue-600' }
+						// { label: 'Avg. people affected', value: averagePeople, icon: Users, tone: 'from-sky-500 to-blue-600' }
+					].map((item) => {
+						const Icon = item.icon;
+						return (
+							<article key={item.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+								<div className="flex items-start justify-between gap-4">
+									<div>
+										<p className="text-sm font-medium text-slate-500">{item.label}</p>
+										<h3 className="mt-2 text-3xl font-black tracking-tight text-slate-900">{item.value}</h3>
+									</div>
+									<div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${item.tone} text-white shadow-lg shadow-slate-300/50`}>
+										<Icon className="h-5 w-5" />
+									</div>
+								</div>
+							</article>
+						);
+					})}
+				</section> */}
+				<section className="grid gap-4 md:grid-cols-3">
+					{[
+						{ label: 'Total incidents', value: totalIncidents, icon: AlertTriangle, tone: 'from-[#0B1D3A] to-[#16396D]' },
+						{ label: 'Active cases', value: activeIncidents, icon: TrendingUp, tone: 'from-amber-500 to-orange-600' },
+						{ label: 'Closed cases', value: closedIncidents, icon: CheckCircle, tone: 'from-emerald-500 to-green-600' },
 					].map((item) => {
 						const Icon = item.icon;
 						return (
@@ -513,11 +600,11 @@ function IncidentDashboard() {
 								<p className="mt-2 text-2xl font-black text-slate-900">{criticalIncidents + highIncidents}</p>
 								<p className="mt-1 text-sm text-slate-500">Requires attention</p>
 							</div>
-							<div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+							{/* <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
 								<p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Total people</p>
 								<p className="mt-2 text-2xl font-black text-slate-900">{totalPeople}</p>
 								<p className="mt-1 text-sm text-slate-500">Across all reports</p>
-							</div>
+							</div> */}
 						</div>
 					</article>
 				</section>
@@ -526,7 +613,7 @@ function IncidentDashboard() {
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
 						<div>
 							<p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Recent reports</p>
-							<h2 className="mt-2 text-2xl font-bold text-slate-900">Latest incidents from the floor</h2>
+							<h2 className="mt-2 text-2xl font-bold text-slate-900">Latest incidents</h2>
 						</div>
 						<p className="text-sm text-slate-500">Showing the most recent operational entries</p>
 					</div>
@@ -559,10 +646,10 @@ function IncidentDashboard() {
 										</div>
 
 										<div className="col-span-4 sm:col-span-3">
-											<p className="font-medium text-slate-800">{incident.room_details?.room_name || 'Unknown room'}</p>
-											<div className="mt-1 space-y-1 text-xs text-slate-500">
-												<p className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> {incident.room_details?.terminal_name || '-'}</p>
+											<div className="space-y-1 text-xs text-slate-500">
+												{/* <p className="flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> {incident.room_details?.terminal_name || '-'}</p>
 												<p className="flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> {incident.room_details?.block_name || '-'}</p>
+												<p className="flex items-center gap-1.5 font-medium text-slate-800"><DoorOpen className="h-3.5 w-3.5" /> {incident.room_details?.room_name || '-'}</p> */}
 												{incident.location_details && (
 													<p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {incident.location_details}</p>
 												)}
