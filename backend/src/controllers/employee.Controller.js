@@ -1,7 +1,7 @@
 import {pool} from '../config/database.js';
 import bcrypt from 'bcrypt';
 
-const DEFAULT_PASSWORD = 'welcome';
+const DEFAULT_PASSWORD = 'vgt@123';
 const SALT_ROUNDS = 10;
 
 // Helper function to hash password
