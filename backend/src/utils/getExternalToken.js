@@ -1,12 +1,9 @@
 import axios from "axios";
 import https from "https";
 import { pool } from "../config/database.js";
+import api from "./axiosConfig.js";
 
-const TOKEN_REFRESH_MINUTES = 9;
-
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
-});
+const TOKEN_REFRESH_MINUTES = 120;
 
 export const getExternalToken = async (userId) => {
   const result = await pool.query(
@@ -43,16 +40,10 @@ export const getExternalToken = async (userId) => {
   console.log("gen new token");
 
   // Login to external API
-  const response = await axios.post(
-    `${process.env.VOICEGATE_URL}/login/`,
-    {
-      email: process.env.VOICEGATE_EMAIL,
-      password: process.env.VOICEGATE_PASSWORD,
-    },
-    {
-      httpsAgent,
-    },
-  );
+  const response = await api.post(`/login/`, {
+    email: process.env.VOICEGATE_EMAIL,
+    password: process.env.VOICEGATE_PASSWORD,
+  });
 
   const newToken = response.data.token;
 
