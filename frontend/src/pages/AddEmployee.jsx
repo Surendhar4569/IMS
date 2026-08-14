@@ -33,9 +33,13 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext.jsx';
+import bcrypt from 'bcryptjs';
 
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
 const rolesApi = `${import.meta.env.VITE_API_URL}/roles`;
+const departmentsApi = `${import.meta.env.VITE_API_URL}/departments/`;
 
 function Employees() {
   // State Management
@@ -56,7 +60,10 @@ function Employees() {
     current_password: '',
     new_password: ''
   });
-  
+  const [departments, setDepartments] = useState([]);
+  const { user } = useAuth();
+
+
   // Filter States
   const [filters, setFilters] = useState({
     search: '',
@@ -65,14 +72,14 @@ function Employees() {
     from_date: '',
     to_date: ''
   });
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
+
   // UI States
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   // Form Data
   const [formData, setFormData] = useState({
     role_id: '',
@@ -80,15 +87,21 @@ function Employees() {
     last_name: '',
     contact_number: '',
     email: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zip_code: '',
-      country: ''
-    },
-    join_date: '',
-    is_active: true
+
+    password: '',
+    confirmPassword: '',
+
+    is_active: true,
+
+    // EMS fields
+    department_id: '',
+    display_name: '',
+    date_of_birth: '',
+    gender: '',
+    preferred_language: '',
+    timezone: '',
+    user_id: '',
+    user_code: '',
   });
 
   // Statistics
@@ -104,6 +117,7 @@ function Employees() {
     fetchEmployees();
     fetchRoles();
     fetchStats();
+    fetchDepartments();
   }, []);
 
   useEffect(() => {
@@ -136,21 +150,43 @@ function Employees() {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(departmentsApi, {
+        ...getAuthConfig(),
+        params: {
+          user_id: user?.id,
+          salt: user?.salt
+        }
+      });
+
+      //console.log("Departments fetched:", response.data);
+      setDepartments(response.data.department || []);
+      //console.log("Departments state updated:", response.data.data);
+
+    } catch (err) {
+      console.error("Error fetching departments:", err);
+    }
+  };
+
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const params = {};
-      
+      const params = {
+        user_id: user?.id,
+        salt: user?.salt,
+      };
+
       if (filters.search) params.search = filters.search;
       if (filters.status !== 'all') params.is_active = filters.status === 'active';
       if (filters.role_id) params.role_id = filters.role_id;
       if (filters.from_date) params.from_date = filters.from_date;
       if (filters.to_date) params.to_date = filters.to_date;
-      
+
       const response = await axios.get(employeesApi, { params, ...getAuthConfig() });
       setEmployees(response.data.data || []);
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to fetch employees' });
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to fetch users' });
     } finally {
       setLoading(false);
     }
@@ -204,94 +240,405 @@ function Employees() {
       last_name: '',
       contact_number: '',
       email: '',
-      address: {
-        street: '',
-        city: '',
-        state: '',
-        zip_code: '',
-        country: ''
-      },
-      join_date: '',
-      is_active: true
+
+      password: '',
+      confirmPassword: '',
+
+      is_active: true,
+
+      department_id: '',
+      display_name: '',
+      date_of_birth: '',
+      gender: '',
+      preferred_language: '',
+      timezone: '',
+
+      user_id: '',
+      user_code: ''
     });
+
     setEditingId(null);
     setSelectedEmployee(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim()) {
-      setMessage({ type: 'error', text: 'First name, last name, and email are required' });
+
+    if (
+      !formData.first_name.trim() ||
+      !formData.last_name.trim() ||
+      !formData.email.trim() ||
+      !formData.contact_number.trim() ||
+      !formData.role_id
+    ) {
+      setMessage({
+        type: 'error',
+        text: 'First name, last name, email, contact number, and role are required'
+      });
       return;
     }
-    
+
+    if (!formData.password) {
+      toast.error('Password is required');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
     try {
       setSaving(true);
       setMessage({ type: '', text: '' });
-      
+
+      const hashedPassword = await bcrypt.hash(
+        formData.password,
+        10
+      );
+
       const payload = {
         role_id: formData.role_id || null,
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         contact_number: formData.contact_number || null,
         email: formData.email.trim(),
-        address: formData.address,
-        join_date: formData.join_date || null,
+        password: hashedPassword,
         is_active: formData.is_active
       };
-      
+
+      const timeZone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      const dateandtime = new Date().toISOString();
+
+      const EMSPayload = {
+        createdat: dateandtime,
+
+        department_id: {
+          code: "",
+          createdat: dateandtime,
+          id: formData.department_id,
+          name: "",
+          status: "",
+          updatedat: dateandtime
+        },
+
+        displayName: formData.display_name,
+
+        dob: formData.date_of_birth
+          ? `${formData.date_of_birth}T00:00:00.000Z`
+          : null,
+
+        first_name: formData.first_name.trim(),
+
+        gender: formData.gender,
+
+        id: formData.user_id,
+
+        last_name: formData.last_name.trim(),
+
+        member_code: formData.user_code,
+
+        passwordhash: hashedPassword,
+
+        preferredLanguage: formData.preferred_language,
+
+        status: formData.is_active
+          ? "active"
+          : "inactive",
+
+        timezone: timeZone,
+
+        updateat: dateandtime
+      };
+
       if (editingId) {
-        await axios.put(`${employeesApi}/${editingId}`, payload, getAuthConfig());
-        setMessage({ type: 'success', text: 'Employee updated successfully' });
+
+        const response = await axios.put(
+          `${employeesApi}/${editingId}`,
+          payload,
+          getAuthConfig()
+        );
+
+        // Backend success
+        if (response.status >= 200 && response.status < 300) {
+
+          setMessage({
+            type: 'success',
+            text:
+              response.data?.message ||
+              'User updated successfully'
+          });
+
+          toast.success(
+            response.data?.message ||
+            'User updated successfully'
+          );
+        }
+
       } else {
-        const response = await axios.post(`${employeesApi}/register`, payload, getAuthConfig());
-        setMessage({ 
-          type: 'success', 
-          text: response.data.message || 'Employee registered successfully' 
-        });
+
+        const response = await axios.post(
+          `${employeesApi}/register`,
+          {
+            payload,
+            emsPayload: EMSPayload
+          },
+          {
+            ...getAuthConfig(),
+            params: {
+              user_id: user?.id,
+              salt: user?.salt
+            }
+          }
+        );
+
+        if (response.status >= 200 && response.status < 300) {
+
+          setMessage({
+            type: 'success',
+            text:
+              response.data?.message ||
+              'User registered successfully'
+          });
+
+          toast.success(
+            response.data?.message ||
+            'User registered successfully'
+          );
+        }
       }
-      
+
       resetForm();
+
       await fetchEmployees();
       await fetchStats();
+
       setActiveTab('list');
+
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to save employee' });
+
+      console.error(
+        'Employee save error:',
+        err
+      );
+
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Failed to save user';
+
+      setMessage({
+        type: 'error',
+        text: errorMessage
+      });
+
+      toast.error(errorMessage);
+
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEdit = (employee) => {
-    setEditingId(employee.id);
-    setFormData({
-      role_id: employee.role_id || '',
-      first_name: employee.first_name,
-      last_name: employee.last_name,
-      contact_number: employee.contact_number || '',
-      email: employee.email,
-      address: employee.address || {
-        street: '', city: '', state: '', zip_code: '', country: ''
-      },
-      join_date: employee.join_date?.split('T')[0] || '',
-      is_active: employee.is_active
-    });
-    setSelectedEmployee(employee);
-    setActiveTab('form');
+  // const handleEdit = (employee) => {
+  //   console.log("Editing employee:", employee);
+
+  //   setEditingId(employee.local_id || employee.id);
+
+  //   setFormData({
+  //     // Local fields
+  //     role_id: employee.role_id
+  //       ? String(employee.role_id)
+  //       : '',
+
+  //     first_name:
+  //       employee.first_name || '',
+
+  //     last_name:
+  //       employee.last_name || '',
+
+  //     contact_number:
+  //       employee.contact_number || '',
+
+  //     email:
+  //       employee.email || '',
+
+  //     // Password fields
+  //     password: '',
+  //     confirmPassword: '',
+
+  //     is_active:
+  //       employee.is_active ?? true,
+  //   });
+
+  //   setSelectedEmployee(employee);
+
+  //   setActiveTab('form');
+  // };
+
+  const fetchEMSEmployee = async (memberId) => {
+    try {
+      if (!memberId) {
+        throw new Error('EMS Member ID not found');
+      }
+
+      console.log('Fetching EMS employee:', memberId);
+
+      const response = await axios.get(
+        `${employeesApi}/${memberId}/`,
+        {
+          ...getAuthConfig(),
+          params: {
+            user_id: user?.id,
+            salt: user?.salt,
+          },
+        }
+      );
+
+      console.log('EMS employee response:', response.data);
+
+      return response.data.data;
+
+    } catch (error) {
+      console.error('EMS employee fetch error:', error);
+
+      throw new Error(
+        error.response?.data?.message ||
+        'Failed to fetch employee details from EMS', { cause: error }
+      );
+    }
   };
 
+  const handleEdit = async (employee) => {
+    try {
+      console.log('Edit employee:', employee);
+
+      setSaving(true);
+
+      // Local DB employee ID
+      const localEmployeeId = employee.id;
+
+      // EMS member ID
+      const memberId = employee.member_id;
+
+      console.log('Local Employee ID:', localEmployeeId);
+      console.log('EMS Member ID:', memberId);
+
+      if (!memberId) {
+        toast.error('EMS Member ID not found for this employee');
+        return;
+      }
+
+      // ------------------------------------------------
+      // STEP 1: Fill local DB data
+      // ------------------------------------------------
+
+      setFormData({
+        role_id: employee.role_id
+          ? String(employee.role_id)
+          : '',
+
+        first_name: employee.first_name || '',
+        last_name: employee.last_name || '',
+        contact_number: employee.contact_number || '',
+        email: employee.email || '',
+
+        password: '',
+        confirmPassword: '',
+
+        is_active: employee.is_active ?? true,
+
+        // EMS fields initially empty
+        department_id: '',
+        display_name: '',
+        date_of_birth: '',
+        gender: '',
+        preferred_language: '',
+        timezone: '',
+        user_id: '',
+        user_code: '',
+      });
+
+      setEditingId(localEmployeeId);
+      setSelectedEmployee(employee);
+      setActiveTab('form');
+
+      // ------------------------------------------------
+      // STEP 2: Fetch EMS data
+      // ------------------------------------------------
+
+      const emsData = await fetchEMSEmployee(memberId);
+
+      console.log('EMS data received:', emsData);
+
+      // ------------------------------------------------
+      // STEP 3: Merge EMS data into form
+      // ------------------------------------------------
+
+      setFormData(prev => ({
+        ...prev,
+
+        display_name:
+          emsData?.displayName || '',
+
+        date_of_birth:
+          emsData?.dob
+            ? emsData.dob.substring(0, 10)
+            : '',
+
+        gender:
+          emsData?.gender || '',
+
+        department_id:
+          emsData?.department_id?.id
+            ? String(emsData.department_id.id)
+            : '',
+
+        preferred_language:
+          emsData?.preferredLanguage || '',
+
+        timezone:
+          emsData?.timezone || '',
+
+        user_id:
+          emsData?.id
+            ? String(emsData.id)
+            : '',
+
+        user_code:
+          emsData?.member_code || '',
+      }));
+
+    } catch (error) {
+
+      console.error('Error loading employee for edit:', error);
+
+      toast.error(
+        error.message ||
+        'Failed to load employee details'
+      );
+
+    } finally {
+      setSaving(false);
+    }
+  };
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete employee "${name}"?`)) return;
-    
+    if (!window.confirm(`Are you sure you want to delete user "${name}"?`)) return;
+
     try {
       setDeletingId(id);
       await axios.delete(`${employeesApi}/${id}`, getAuthConfig());
-      setMessage({ type: 'success', text: 'Employee deleted successfully' });
+      setMessage({ type: 'success', text: 'User deleted successfully' });
       await fetchEmployees();
       await fetchStats();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete employee' });
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete user' });
     } finally {
       setDeletingId(null);
     }
@@ -302,7 +649,7 @@ function Employees() {
       setTogglingId(employee.id);
       const action = employee.is_active ? 'deactivate' : 'activate';
       await axios.patch(`${employeesApi}/${employee.id}/${action}`, {}, getAuthConfig());
-      setMessage({ type: 'success', text: `Employee ${action}d successfully` });
+      setMessage({ type: 'success', text: `User ${action}d successfully` });
       await fetchEmployees();
       await fetchStats();
     } catch (err) {
@@ -314,7 +661,7 @@ function Employees() {
 
   const handleResetPassword = async (id, name) => {
     if (!window.confirm(`Reset password for "${name}" to default "welcome"?`)) return;
-    
+
     try {
       setResettingId(id);
       const response = await axios.post(`${employeesApi}/${id}/reset-password`, {}, getAuthConfig());
@@ -328,17 +675,17 @@ function Employees() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    
+
     if (!passwordData.current_password || !passwordData.new_password) {
       setMessage({ type: 'error', text: 'Both passwords are required' });
       return;
     }
-    
+
     if (passwordData.new_password.length < 6) {
       setMessage({ type: 'error', text: 'New password must be at least 6 characters' });
       return;
     }
-    
+
     try {
       await axios.post(
         `${employeesApi}/${passwordAction.id}/change-password`,
@@ -378,16 +725,16 @@ function Employees() {
                 <div className="flex items-center gap-2 mb-3">
                   <Users className="w-5 h-5 text-blue-300" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-blue-200">
-                    Human Resources
+                    User Management
                   </span>
                 </div>
-                <h1 className="text-4xl font-bold mb-2">Employee Management</h1>
+                <h1 className="text-4xl font-bold mb-2">User Management</h1>
                 <p className="text-blue-100 max-w-2xl">
-                  Manage employee records, roles, and account settings
+                  Manage user records, roles, and account settings
                 </p>
               </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div className="backdrop-blur-sm bg-white/10 rounded-2xl p-4 border border-white/20">
                   <div className="text-2xl font-bold">{stats.total_employees}</div>
                   <div className="text-xs text-blue-200 mt-1">Total</div>
@@ -425,14 +772,13 @@ function Employees() {
                 setActiveTab('list');
                 setMessage({ type: '', text: '' });
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'list' 
-                  ? 'bg-[#0B1D3A] text-white shadow-md' 
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === 'list'
+                ? 'bg-[#0B1D3A] text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-50'
+                }`}
             >
               <Users className="w-4 h-4" />
-              Employee Directory
+              User Directory
               {employees.length > 0 && activeTab !== 'list' && (
                 <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
                   {employees.length}
@@ -444,25 +790,23 @@ function Employees() {
                 resetForm();
                 setActiveTab('form');
               }}
-              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'form' 
-                  ? 'bg-[#0B1D3A] text-white shadow-md' 
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`flex-1 px-6 py-3 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${activeTab === 'form'
+                ? 'bg-[#0B1D3A] text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-50'
+                }`}
             >
               <UserPlus className="w-4 h-4" />
-              {editingId ? 'Edit Employee' : 'Add Employee'}
+              {editingId ? 'Edit User' : 'Add User'}
             </button>
           </div>
         </div>
 
         {/* Messages */}
         {message.text && (
-          <div className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${
-            message.type === 'success' 
-              ? 'bg-green-50 border border-green-200 text-green-800' 
-              : 'bg-red-50 border border-red-200 text-red-800'
-          }`}>
+          <div className={`mb-6 rounded-xl p-4 flex items-start gap-3 ${message.type === 'success'
+            ? 'bg-green-50 border border-green-200 text-green-800'
+            : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
             ) : (
@@ -493,7 +837,7 @@ function Employees() {
                       type="password"
                       value={passwordData.current_password}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
                       required
                     />
                   </div>
@@ -503,20 +847,20 @@ function Employees() {
                       type="password"
                       value={passwordData.new_password}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
                       required
                     />
                     <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-6">
-                  <button type="submit" className="flex-1 bg-[#0B1D3A] text-white rounded-lg py-2">
+                  <button type="submit" className="flex-1 bg-[#0B1D3A] text-white rounded-lg py-2 hover:bg-[#132D5E] transition-colors">
                     Change Password
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowPasswordModal(false)}
-                    className="flex-1 border border-gray-300 rounded-lg py-2"
+                    className="flex-1 border border-gray-300 rounded-lg py-2 hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -526,56 +870,163 @@ function Employees() {
           </div>
         )}
 
-        {/* Form Section */}
+        {/* Form Section - Custom 4-Row Layout */}
         {activeTab === 'form' && (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingId ? 'Edit Employee' : 'Add New Employee'}
+                {editingId ? 'Edit User' : 'Add New User'}
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {editingId ? 'Update employee information' : 'Register a new employee with default password "welcome"'}
-              </p>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Personal Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <UserCheck className="w-5 h-5" />
-                    Personal Information
-                  </h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        First Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="first_name"
-                        value={formData.first_name}
+              <div className="space-y-6">
+
+                {/* Row 1: 4 Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Display Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="display_name"
+                      value={formData.display_name}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="date_of_birth"
+                      value={formData.date_of_birth}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: 4 Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Gender <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                      required
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      User ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="user_id"
+                      value={formData.user_id}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      User Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="user_code"
+                      value={formData.user_code}
+                      onChange={handleInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Department <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <select
+                        name="department_id"
+                        value={formData.department_id}
                         onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
+                        className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
                         required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Last Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
-                        required
-                      />
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(department => (
+                          <option key={department.id} value={department.id}>{department.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                  
+                </div>
+
+                {/* Row 3: Contact & Email Fields (3 Fields) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Role <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <select
+                        name="role_id"
+                        value={formData.role_id}
+                        onChange={handleInputChange}
+                        className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                        required
+                      >
+                        <option value="">Select Role</option>
+                        {roles.map(role => (
+                          <option key={role.id} value={role.id}>{role.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email <span className="text-red-500">*</span>
@@ -587,15 +1038,14 @@ function Employees() {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
+                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
                         required
                       />
                     </div>
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Number
+                      Contact Number <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -604,135 +1054,94 @@ function Employees() {
                         name="contact_number"
                         value={formData.contact_number}
                         onChange={handleInputChange}
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
+                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        required
                       />
                     </div>
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Role
-                    </label>
-                    <select
-                      name="role_id"
-                      value={formData.role_id}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
-                    >
-                      <option value="">Select Role</option>
-                      {roles.map(role => (
-                        <option key={role.id} value={role.id}>{role.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Join Date
+                      Preffered Language <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="date"
-                        name="join_date"
-                        value={formData.join_date}
+                      <select
+                        name="preferred_language"
+                        value={formData.preferred_language}
                         onChange={handleInputChange}
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
-                      />
+                        className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                        required
+                      >
+                        <option value="">Select Language</option>
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="zh">Chinese</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="ru">Russian</option>
+                      </select>
                     </div>
                   </div>
                 </div>
-                
-                {/* Address Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    Address Information
-                  </h3>
-                  
+
+
+                {/* Row 4: Passwords & Active Status */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Street Address
+                      Password <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="address.street"
-                      value={formData.address.street}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        City
-                      </label>
+                    <div className="relative">
+                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
-                        type="text"
-                        name="address.city"
-                        value={formData.address.city}
+                        type="password"
+                        name="password"
+                        value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        name="address.state"
-                        value={formData.address.state}
-                        onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                        placeholder="Enter password"
+                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
                       />
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        ZIP Code
-                      </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
-                        type="text"
-                        name="address.zip_code"
-                        value={formData.address.zip_code}
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        name="address.country"
-                        value={formData.address.country}
-                        onChange={handleInputChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                        placeholder="Confirm password"
+                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
                       />
                     </div>
                   </div>
-                  
-                  <div className="flex items-center justify-between pt-4">
-                    <label className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <label htmlFor="is_active" className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         name="is_active"
+                        id="is_active"
                         checked={formData.is_active}
                         onChange={handleInputChange}
-                        className="rounded border-gray-300 text-[#0B1D3A] focus:ring-[#0B1D3A]"
+                        className="sr-only peer"
                       />
-                      <span className="text-sm font-medium text-gray-700">Active Employee</span>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0B1D3A]"></div>
                     </label>
+                    <span className="text-sm font-medium text-gray-700">
+                      {formData.is_active ? 'Active Account' : 'Inactive Account'}
+                    </span>
                   </div>
                 </div>
+
               </div>
-              
-              <div className="flex gap-3 mt-6 pt-6 border-t">
+
+              <div className="flex gap-3 mt-8 pt-6 border-t">
                 <button
                   type="submit"
                   disabled={saving}
@@ -746,7 +1155,7 @@ function Employees() {
                   ) : (
                     <>
                       {editingId ? <RefreshCw className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-                      {editingId ? 'Update Employee' : 'Register Employee'}
+                      {editingId ? 'Update User' : 'Register User'}
                     </>
                   )}
                 </button>
@@ -756,7 +1165,7 @@ function Employees() {
                     resetForm();
                     if (!editingId) setActiveTab('list');
                   }}
-                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50"
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all"
                 >
                   Cancel
                 </button>
@@ -772,12 +1181,12 @@ function Employees() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Employee Directory</h2>
+                  <h2 className="text-xl font-bold text-gray-900">User Directory</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Manage and monitor all employees in the system
+                    Manage and monitor all users in the system
                   </p>
                 </div>
-                
+
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="lg:hidden flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm"
@@ -795,59 +1204,59 @@ function Employees() {
                       type="text"
                       value={filters.search}
                       onChange={(e) => handleFilterChange('search', e.target.value)}
-                      placeholder="Search employees..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="Search users..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#0B1D3A] focus:ring-1 focus:ring-blue-100"
                     />
                   </div>
-                  
+
                   <select
                     value={filters.status}
                     onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#0B1D3A] focus:ring-1 focus:ring-blue-100 bg-white"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
-                  
+
                   <select
                     value={filters.role_id}
                     onChange={(e) => handleFilterChange('role_id', e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#0B1D3A] focus:ring-1 focus:ring-blue-100 bg-white"
                   >
                     <option value="">All Roles</option>
                     {roles.map(role => (
                       <option key={role.id} value={role.id}>{role.name}</option>
                     ))}
                   </select>
-                  
+
                   <input
                     type="date"
                     value={filters.from_date}
                     onChange={(e) => handleFilterChange('from_date', e.target.value)}
                     placeholder="From Date"
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#0B1D3A] focus:ring-1 focus:ring-blue-100"
                   />
-                  
+
                   <input
                     type="date"
                     value={filters.to_date}
                     onChange={(e) => handleFilterChange('to_date', e.target.value)}
                     placeholder="To Date"
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-[#0B1D3A] focus:ring-1 focus:ring-blue-100"
                   />
                 </div>
-                
+
                 <div className="flex gap-3 mt-3">
                   <button
                     onClick={applyFilters}
-                    className="px-4 py-2 bg-[#0B1D3A] text-white rounded-lg text-sm font-semibold"
+                    className="px-4 py-2 bg-[#0B1D3A] text-white rounded-lg text-sm font-semibold hover:bg-[#132D5E] transition-colors"
                   >
                     Apply Filters
                   </button>
                   <button
                     onClick={resetFilters}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
                   >
                     Reset
                   </button>
@@ -855,26 +1264,26 @@ function Employees() {
               </div>
             </div>
 
-            {/* Employee Table */}
+            {/* User Table */}
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Loader className="w-8 h-8 animate-spin text-[#0B1D3A]" />
-                  <p className="mt-3 text-gray-500">Loading employees...</p>
+                  <p className="mt-3 text-gray-500">Loading users...</p>
                 </div>
               ) : currentItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="bg-gray-50 rounded-full p-4 mb-4">
                     <Users className="w-12 h-12 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">No employees found</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">No users found</h3>
                   <p className="text-gray-500 text-sm mb-4">
-                    {Object.values(filters).some(v => v) 
-                      ? 'Try adjusting your filters' 
-                      : 'Add your first employee to get started'}
+                    {Object.values(filters).some(v => v)
+                      ? 'Try adjusting your filters'
+                      : 'Add your first user to get started'}
                   </p>
                   {(Object.values(filters).some(v => v)) && (
-                    <button onClick={resetFilters} className="text-[#0B1D3A] text-sm font-semibold">
+                    <button onClick={resetFilters} className="text-[#0B1D3A] text-sm font-semibold hover:underline">
                       Clear all filters
                     </button>
                   )}
@@ -883,10 +1292,9 @@ function Employees() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">Employee</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">User</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">Contact</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">Role</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">Join Date</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">Status</th>
                       <th className="px-6 py-4 text-right text-xs font-semibold uppercase text-gray-500">Actions</th>
                     </tr>
@@ -896,7 +1304,7 @@ function Employees() {
                       <tr key={employee.id} className="hover:bg-gray-50 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0B1D3A] to-[#1A3A6E] flex items-center justify-center text-white font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0B1D3A] to-[#1A3A6E] flex items-center justify-center text-white font-semibold text-sm">
                               {employee.first_name[0]}{employee.last_name[0]}
                             </div>
                             <div>
@@ -919,15 +1327,12 @@ function Employees() {
                             {employee.role_name || 'No Role'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {employee.join_date || '-'}
-                        </td>
+
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                            employee.is_active 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${employee.is_active
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                            }`}>
                             {employee.is_active ? (
                               <Activity className="w-3 h-3" />
                             ) : (
@@ -945,7 +1350,7 @@ function Employees() {
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button
+                            {/* <button
                               onClick={() => {
                                 setPasswordAction(employee);
                                 setShowPasswordModal(true);
@@ -966,15 +1371,14 @@ function Employees() {
                               ) : (
                                 <Lock className="w-4 h-4" />
                               )}
-                            </button>
-                            <button
+                            </button> */}
+                            {/* <button
                               onClick={() => handleToggleStatus(employee)}
                               disabled={togglingId === employee.id}
-                              className={`p-2 rounded-lg transition-all disabled:opacity-50 ${
-                                employee.is_active 
-                                  ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50' 
-                                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
-                              }`}
+                              className={`p-2 rounded-lg transition-all disabled:opacity-50 ${employee.is_active
+                                ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+                                : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                                }`}
                               title={employee.is_active ? 'Deactivate' : 'Activate'}
                             >
                               {togglingId === employee.id ? (
@@ -982,7 +1386,7 @@ function Employees() {
                               ) : (
                                 <Power className="w-4 h-4" />
                               )}
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => handleDelete(employee.id, `${employee.first_name} ${employee.last_name}`)}
                               disabled={deletingId === employee.id}
@@ -1008,23 +1412,23 @@ function Employees() {
             {!loading && employees.length > 0 && (
               <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, employees.length)} of {employees.length} employees
+                  Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, employees.length)} of {employees.length} users
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white"
+                    className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 text-sm">
+                  <span className="px-4 py-2 text-sm font-medium text-gray-700">
                     Page {currentPage} of {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white"
+                    className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>

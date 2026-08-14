@@ -4,11 +4,12 @@ import { pool } from "../config/database.js";
 
 const TOKEN_REFRESH_MINUTES = 9;
 
-// const httpsAgent = new https.Agent({
-//   rejectUnauthorized: false,
-// });
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
-export const getExternalToken = async (userId) => {
+export const getExternalToken = async (userId, salt) => {
+  console.log("getExternalToken called with userId:", userId, "and salt:", salt);
   const result = await pool.query(
     `
         SELECT
@@ -47,14 +48,16 @@ export const getExternalToken = async (userId) => {
     `${process.env.VOICEGATE_URL}/login/`,
     {
       email: process.env.VOICEGATE_EMAIL,
-      password: process.env.VOICEGATE_PASSWORD,
+      password: salt,
     },
-    // {
-    //   httpsAgent,
-    // },
+    {
+      httpsAgent,
+    },
   );
 
   const newToken = response.data.token;
+
+  console.log("new token:", newToken);
 
   await pool.query(
     `

@@ -1,4 +1,4 @@
-import {createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 
 const AuthContext = createContext(null);
@@ -53,7 +53,12 @@ export function AuthProvider({ children }) {
         const response = await api.get("/auth/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUser(response.data);
+      
+        setUser((prev) => ({
+          ...prev,
+          ...response.data,
+        }));
+        
       } catch (error) {
         console.error("Error loading auth profile:", error);
         setToken(null);

@@ -66,7 +66,7 @@ import RoomAllocation from "./pages/incideintRoomAllocation";
 import InvestigationManager from "./pages/incidentInvestigation";
 import PostIncidentReviewForm from "./pages/RCA";
 import TerminalHierarchy from "./pages/RoomsAvaiblity";
-
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
@@ -82,122 +82,120 @@ function AppRoutes() {
   const { token } = useAuth();
 
   return (
-    <Routes>
+    <>
+      <Toaster position="top-right" />
 
-      {/* Login */}
-      <Route
-        path="/login"
-        element={
-          token ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <Login />
-          )
-        }
-      />
-
-      {/* Protected Routes */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        {/* Default Route */}
+      <Routes>
+        {/* Login */}
         <Route
-          index
-          element={<Navigate to="/dashboard" replace />}
+          path="/login"
+          element={
+            token ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Login />
+            )
+          }
         />
 
-        {/* Dashboard */}
+        {/* Protected Routes */}
         <Route
-          path="dashboard"
-          element={<Dashboard />}
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Default Route */}
+          <Route
+            index
+            element={<Navigate to="/dashboard" replace />}
+          />
+
+          {/* Dashboard */}
+          <Route
+            path="dashboard"
+            element={<Dashboard />}
+          />
+
+          {/* Employee Management */}
+          <Route
+            path="employees"
+            element={<Employees />}
+          />
+
+          <Route
+            path="roles"
+            element={<Roles />}
+          />
+
+          {/* Building Management */}
+          <Route
+            path="terminals"
+            element={<Terminals />}
+          />
+
+          <Route
+            path="blocks"
+            element={<Blocks />}
+          />
+
+          <Route
+            path="floors"
+            element={<Floors />}
+          />
+
+          <Route
+            path="rooms"
+            element={<Rooms />}
+          />
+
+          <Route
+            path="rooms-availability"
+            element={<TerminalHierarchy />}
+          />
+
+          {/* Incident Management */}
+          <Route
+            path="incident/dashboard"
+            element={<IncidentDashboard />}
+          />
+
+          <Route
+            path="incident/add-incident"
+            element={<Incidents />}
+          />
+
+          <Route
+            path="incident/room-allocation"
+            element={<RoomAllocation />}
+          />
+
+          <Route
+            path="incident/investigation"
+            element={<InvestigationManager />}
+          />
+
+          <Route
+            path="incident/post-incident-review"
+            element={<PostIncidentReviewForm />}
+          />
+        </Route>
+
+        {/* Invalid URL */}
+        <Route
+          path="*"
+          element={
+            token ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
-
-        {/* Employee Management */}
-        <Route
-          path="employees"
-          element={<Employees />}
-        />
-
-        <Route
-          path="roles"
-          element={<Roles />}
-        />
-
-        {/* Building Management */}
-        <Route
-          path="terminals"
-          element={<Terminals />}
-        />
-
-        <Route
-          path="blocks"
-          element={<Blocks />}
-        />
-
-        <Route
-          path="floors"
-          element={<Floors />}
-        />
-
-        <Route
-          path="rooms"
-          element={<Rooms />}
-        />
-
-        <Route
-        path="rooms-availability"
-        element={<TerminalHierarchy />}
-      />
-
-        {/* Incident Management */}
-       
-      
-      <Route
-        path="/incident/dashboard"
-        element={<IncidentDashboard />}
-      />
-
-      <Route
-        path="/incident/add-incident"
-        element={<Incidents />}
-      />
-
-      <Route
-        path = "/incident/room-allocation"
-        element={<RoomAllocation />}
-      />
-
-      <Route
-        path = "/incident/investigation"
-        element={<InvestigationManager />}
-      />
-
-      <Route
-        path = "/incident/post-incident-review"
-        element={<PostIncidentReviewForm />}
-      />
-      
-      </Route>
-
-
-      {/* Invalid URL */}
-      <Route
-        path="*"
-        element={
-          token ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
