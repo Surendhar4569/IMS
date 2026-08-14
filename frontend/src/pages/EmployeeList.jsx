@@ -69,7 +69,6 @@ function EmployeeList() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -81,7 +80,7 @@ function EmployeeList() {
                                     <td className="px-6 py-4 whitespace-nowrap">{employee.position}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{employee.department}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">${employee.salary}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{new Date(employee.join_date).toLocaleDateString()}</td>
+                                    
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <button
                                             onClick={() => handleDelete(employee.id)}

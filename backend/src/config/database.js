@@ -52,7 +52,9 @@ const createTables = async () => {
                 password VARCHAR(255) NOT NULL,
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                member_code VARCHAR(100),
+                member_id VARCHAR(100)
             )
         `);
 
@@ -193,6 +195,22 @@ const createTables = async () => {
             add column if not exists checklist_data JSONB;
        `);
 
+
+
+       await client.query(`
+  ALTER TABLE employees
+    DROP COLUMN IF EXISTS adress,
+    DROP COLUMN IF EXISTS join_date,
+    DROP COLUMN IF EXISTS ems_member_code,
+    DROP COLUMN IF EXISTS ems_member_id;
+`);
+
+        await client.query(`
+        ALTER TABLE employees
+ADD COLUMN IF NOT EXISTS member_code VARCHAR(100),
+ADD COLUMN IF NOT EXISTS member_id VARCHAR(100);
+       `);
+
         // Create function to update updated_at timestamp
         await client.query(`
             CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -200,7 +218,7 @@ const createTables = async () => {
             BEGIN
                 NEW.updated_at = CURRENT_TIMESTAMP;
                 RETURN NEW;
-            END;
+        END;
             $$ language 'plpgsql';
         `);
 

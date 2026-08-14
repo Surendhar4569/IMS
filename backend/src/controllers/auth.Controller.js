@@ -95,11 +95,11 @@ export const getProfile = async (req, res) => {
       `SELECT e.id,
                     e.email,
                     CONCAT(e.first_name, ' ', e.last_name) AS name,
-                    e.adress AS address,
+      
                     NULL::text AS position,
                     NULL::text AS department,
                     NULL::numeric AS salary,
-                    TO_CHAR(e.join_date, 'YYYY-MM-DD') as join_date,
+                    
                     COALESCE(r.name, 'employee') AS role,
                     e.created_at
              FROM employees e
