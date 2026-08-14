@@ -1,19 +1,25 @@
-import express from 'express';
-import { login, getProfile } from '../controllers/auth.Controller.js';
-import { authenticateToken } from '../middleware/authMiddleware.js';
-import { body } from 'express-validator';
+import express from "express";
+import {
+  login,
+  getProfile,
+  generateSalt,
+} from "../controllers/auth.Controller.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
+import { body } from "express-validator";
 
 const router = express.Router();
 
 router.post(
-    '/login',
-    [
-        body('email').isEmail().withMessage('Valid email is required'),
-        body('password').notEmpty().withMessage('Password is required')
-    ],
-    login
+  "/login",
+  [
+    body("email").isEmail().withMessage("Valid email is required"),
+    body("password").notEmpty().withMessage("Password is required"),
+  ],
+  login,
 );
 
-router.get('/profile', authenticateToken, getProfile);
+router.get("/profile", authenticateToken, getProfile);
+
+router.post("/generate-salt", generateSalt);
 
 export default router;

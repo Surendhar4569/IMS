@@ -56,15 +56,6 @@ const createTables = async () => {
             )
         `);
 
-        //external_api_tokens
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS external_api_tokens (
-                employee_id INTEGER PRIMARY KEY REFERENCES employees(id),
-                email VARCHAR(255) NOT NULL,
-                token TEXT NOT NULL,
-                updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-            );`);
-
         // Building Setup Tables
         //Terminals table
         await client.query(`
