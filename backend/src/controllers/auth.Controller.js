@@ -2,7 +2,7 @@ import { pool } from "../config/database.js";
 import { comparePassword } from "../utils/bcryptHelper.js";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
-import { generateSalt } from "../utils/generateSalt.js";
+import { genSalt } from "../utils/generateSalt.js";
 
 export const login = async (req, res) => {
   try {
@@ -12,8 +12,6 @@ export const login = async (req, res) => {
     }
 
     const { email, password } = req.body;
-
-    const salt = generateSalt(email, password);
 
     // Allow admin login directly from environment credentials.
     if (
@@ -26,10 +24,9 @@ export const login = async (req, res) => {
           email: process.env.ADMIN_EMAIL,
           role: "admin",
           name: "Super Admin",
-          salt: salt,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "24h" },
+        { expiresIn: "210m" },
       );
 
       return res.json({
@@ -40,7 +37,6 @@ export const login = async (req, res) => {
           email: process.env.ADMIN_EMAIL,
           name: "Super Admin",
           role: "admin",
-          salt: salt,
         },
       });
     }
@@ -70,10 +66,9 @@ export const login = async (req, res) => {
         email: user.email,
         role: user.role_name || "employee",
         name: `${user.first_name} ${user.last_name}`.trim(),
-        salt: salt,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" },
+      { expiresIn: "210m" },
     );
 
     res.json({
@@ -84,7 +79,6 @@ export const login = async (req, res) => {
         email: user.email,
         name: `${user.first_name} ${user.last_name}`.trim(),
         role: user.role_name || "employee",
-        salt: salt,
         position: null,
         department: null,
       },
@@ -122,5 +116,29 @@ export const getProfile = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const generateSalt = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    const salt = genSalt(email, password);
+
+    return res.status(200).json({
+      salt,
+    });
+  } catch (error) {
+    console.error("Generate salt error:", error);
+
+    return res.status(500).json({
+      message: "Failed to generate salt",
+    });
   }
 };

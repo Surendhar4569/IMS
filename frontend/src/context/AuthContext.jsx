@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import vgtAPI from "../utils/axiosConfig"
 
 const AuthContext = createContext(null);
 
@@ -9,6 +10,9 @@ const api = axios.create({
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [externalToken, setExternalToken] = useState(() =>
+    localStorage.getItem("external_token"),
+  );
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
@@ -22,6 +26,15 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("token");
     }
   }, [token]);
+
+  //setting external token on mount
+  useEffect(() => {
+    if (externalToken) {
+      localStorage.setItem("external_token", externalToken);
+    } else {
+      localStorage.removeItem("external_token");
+    }
+  }, [externalToken]);
 
   useEffect(() => {
     if (user) {
@@ -53,12 +66,11 @@ export function AuthProvider({ children }) {
         const response = await api.get("/auth/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-      
+
         setUser((prev) => ({
           ...prev,
           ...response.data,
         }));
-        
       } catch (error) {
         console.error("Error loading auth profile:", error);
         setToken(null);
@@ -71,17 +83,39 @@ export function AuthProvider({ children }) {
     hydrateProfile();
   }, [token, user?.role]);
 
+  //generate salt using user_id and passord
+  const generateSalt = async (email, password) => {
+    try {
+      const saltResponse = await api.post("/auth/generate-salt", {
+        email,
+        password,
+      });
+      return saltResponse.data.salt;
+    } catch (error) {
+      console.error("genSalt error:", error.response);
+    }
+  };
+
   const login = async (email, password) => {
     const response = await api.post("/auth/login", { email, password });
     const { token: nextToken, user: nextUser } = response.data;
     setToken(nextToken);
     setUser(nextUser);
+
+    //getting external token
+    const tokenResponse = await vgtAPI.post(`/login/`, {
+      email: email,
+      password: await generateSalt(email, password),
+    });
+    setExternalToken(tokenResponse.data.token);
+    
     return nextUser;
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
+    setExternalToken(null);
     localStorage.clear();
   };
 

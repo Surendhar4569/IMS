@@ -16,7 +16,7 @@ function getDateTimeHour() {
   return year + month + day + hour;
 }
 
-export function generateSalt(uid, pwd) {
+export function genSalt(uid, pwd) {
   // 1. SHA256(uid + password)
   const hash = sha256(uid + pwd);
 
