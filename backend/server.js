@@ -13,7 +13,6 @@ import incidentsRouter from './src/routes/incidents.Routes.js';
 import incidentRoomAllocationRouter from './src/routes/incidentRoomAllocation.Routes.js';
 import incidentInvestigationRouter from './src/routes/incidentInvesigation.Routes.js';
 import pcaRouter from './src/routes/pca.Routes.js';
-import memebersRouter from './src/routes/members.Routes.js';
 import departmentsRouter from './src/routes/departments.Routes.js';
 
 dotenv.config();
@@ -46,7 +45,6 @@ app.use('/api/incidents', incidentsRouter);
 app.use('/api/room-allocations', incidentRoomAllocationRouter);
 app.use("/api/investigations", incidentInvestigationRouter);
 app.use('/api/pca', pcaRouter);
-app.use('/api/members', memebersRouter);
 app.use('/api/departments', departmentsRouter);
 
 // Health check route
