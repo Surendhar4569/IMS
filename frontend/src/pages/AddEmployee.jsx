@@ -36,10 +36,11 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
 import bcrypt from 'bcryptjs';
+import vgtAPI from "../utils/axiosConfig";
 
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
 const rolesApi = `${import.meta.env.VITE_API_URL}/roles`;
-const departmentsApi = `${import.meta.env.VITE_API_URL}/departments/`;
+
 
 function Employees() {
   // State Management
@@ -87,21 +88,18 @@ function Employees() {
     last_name: '',
     contact_number: '',
     email: '',
-
     password: '',
     confirmPassword: '',
-
     is_active: true,
 
-    // EMS fields
     department_id: '',
     display_name: '',
     date_of_birth: '',
     gender: '',
     preferred_language: '',
     timezone: '',
-    user_id: '',
-    user_code: '',
+
+    user_code: ''
   });
 
   // Statistics
@@ -152,20 +150,69 @@ function Employees() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(departmentsApi, {
-        ...getAuthConfig(),
-        params: {
-          user_id: user?.id,
-          salt: user?.salt
-        }
-      });
-
-      //console.log("Departments fetched:", response.data);
+      const response = await vgtAPI.get(`/department/`);
       setDepartments(response.data.department || []);
-      //console.log("Departments state updated:", response.data.data);
-
     } catch (err) {
       console.error("Error fetching departments:", err);
+    }
+  };
+  const fetchEMSMember = async (memberId) => {
+    try {
+      if (!memberId) {
+        throw new Error('EMS member ID not found');
+      }
+
+      console.log(
+        'Fetching EMS member:',
+        memberId
+      );
+
+      const response = await vgtAPI.get(
+        `/members/${memberId}`
+      );
+
+      console.log(
+        'EMS member response:',
+        response.data
+      );
+
+      const emsData = response.data;
+
+      // Check EMS error response
+      if (
+        emsData?.error_response?.error_code !== 0
+      ) {
+        throw new Error(
+          emsData?.error_response?.error_message ||
+          'Failed to fetch EMS member'
+        );
+      }
+
+      const emsMember =
+        emsData?.members?.[0];
+
+      if (!emsMember) {
+        throw new Error(
+          'EMS member data not found'
+        );
+      }
+
+      return emsMember;
+
+    } catch (error) {
+
+      console.error(
+        'EMS member fetch error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response
+          ?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch EMS employee', { cause: error }
+      );
     }
   };
 
@@ -253,14 +300,62 @@ function Employees() {
       preferred_language: '',
       timezone: '',
 
-      user_id: '',
       user_code: ''
     });
 
     setEditingId(null);
     setSelectedEmployee(null);
   };
+  const createEMSMember = async (emsPayload) => {
+    try {
+      const response = await vgtAPI.post(
+        `/members/`,
+        emsPayload
+      );
 
+      console.log(
+        'EMS create response:',
+        response.data
+      );
+
+      const emsData = response.data;
+
+      // Check EMS business-level error
+      if (
+        emsData?.error_response?.error_code !== 0
+      ) {
+        throw new Error(
+          emsData?.error_response?.error_message ||
+          'EMS employee creation failed'
+        );
+      }
+
+      const emsMember =
+        emsData?.members?.[0];
+
+      if (!emsMember) {
+        throw new Error(
+          'EMS employee was not returned after creation'
+        );
+      }
+
+      return emsMember;
+
+    } catch (error) {
+
+      console.error(
+        'EMS employee creation error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'EMS employee creation failed', { cause: error }
+      );
+    }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -329,33 +424,42 @@ function Employees() {
           updatedat: dateandtime
         },
 
-        displayName: formData.display_name,
+        displayName:
+          formData.display_name,
 
-        dob: formData.date_of_birth
-          ? `${formData.date_of_birth}T00:00:00.000Z`
-          : null,
+        dob:
+          formData.date_of_birth
+            ? `${formData.date_of_birth}T00:00:00.000Z`
+            : null,
 
-        first_name: formData.first_name.trim(),
+        first_name:
+          formData.first_name.trim(),
 
-        gender: formData.gender,
+        gender:
+          formData.gender,
 
-        id: formData.user_id,
+        last_name:
+          formData.last_name.trim(),
 
-        last_name: formData.last_name.trim(),
+        member_code:
+          formData.user_code,
 
-        member_code: formData.user_code,
+        passwordhash:
+          hashedPassword,
 
-        passwordhash: hashedPassword,
+        preferredLanguage:
+          formData.preferred_language,
 
-        preferredLanguage: formData.preferred_language,
+        status:
+          formData.is_active
+            ? "active"
+            : "inactive",
 
-        status: formData.is_active
-          ? "active"
-          : "inactive",
+        timezone:
+          timeZone,
 
-        timezone: timeZone,
-
-        updateat: dateandtime
+        updateat:
+          dateandtime
       };
 
       if (editingId) {
@@ -384,11 +488,45 @@ function Employees() {
 
       } else {
 
+        let emsMember;
+
+        try {
+
+          emsMember = await createEMSMember(
+            EMSPayload
+          );
+
+          console.log(
+            'EMS employee created:',
+            emsMember
+          );
+
+        } catch (emsError) {
+
+          console.error(
+            'EMS registration failed:',
+            emsError
+          );
+
+          toast.error(
+            emsError.message ||
+            'Failed to create employee in EMS'
+          );
+
+          return;
+        }
+
+        const localPayload = {
+          ...payload,
+
+          member_id: emsMember.id,
+          member_code: emsMember.member_code
+        };
+
         const response = await axios.post(
           `${employeesApi}/register`,
           {
-            payload,
-            emsPayload: EMSPayload
+            payload: localPayload
           },
           {
             ...getAuthConfig(),
@@ -399,7 +537,11 @@ function Employees() {
           }
         );
 
-        if (response.status >= 200 && response.status < 300) {
+
+        if (
+          response.status >= 200 &&
+          response.status < 300
+        ) {
 
           setMessage({
             type: 'success',
@@ -482,142 +624,157 @@ function Employees() {
   //   setActiveTab('form');
   // };
 
-  const fetchEMSEmployee = async (memberId) => {
-    try {
-      if (!memberId) {
-        throw new Error('EMS Member ID not found');
-      }
 
-      console.log('Fetching EMS employee:', memberId);
-
-      const response = await axios.get(
-        `${employeesApi}/${memberId}/`,
-        {
-          ...getAuthConfig(),
-          params: {
-            user_id: user?.id,
-            salt: user?.salt,
-          },
-        }
-      );
-
-      console.log('EMS employee response:', response.data);
-
-      return response.data.data;
-
-    } catch (error) {
-      console.error('EMS employee fetch error:', error);
-
-      throw new Error(
-        error.response?.data?.message ||
-        'Failed to fetch employee details from EMS', { cause: error }
-      );
-    }
-  };
 
   const handleEdit = async (employee) => {
+
     try {
-      console.log('Edit employee:', employee);
 
       setSaving(true);
 
-      // Local DB employee ID
-      const localEmployeeId = employee.id;
+      console.log(
+        'Editing employee:',
+        employee
+      );
 
-      // EMS member ID
-      const memberId = employee.member_id;
+      const localEmployeeId =
+        employee.id;
 
-      console.log('Local Employee ID:', localEmployeeId);
-      console.log('EMS Member ID:', memberId);
+
+      const memberId =
+        employee.member_id;
+
+      console.log(
+        'Local ID:',
+        localEmployeeId
+      );
+
+      console.log(
+        'EMS Member ID:',
+        memberId
+      );
 
       if (!memberId) {
-        toast.error('EMS Member ID not found for this employee');
+
+        toast.error(
+          'EMS member ID not found for this employee'
+        );
+
         return;
       }
 
-      // ------------------------------------------------
-      // STEP 1: Fill local DB data
-      // ------------------------------------------------
+      setEditingId(
+        localEmployeeId
+      );
+
+      setSelectedEmployee(
+        employee
+      );
 
       setFormData({
         role_id: employee.role_id
           ? String(employee.role_id)
           : '',
 
-        first_name: employee.first_name || '',
-        last_name: employee.last_name || '',
-        contact_number: employee.contact_number || '',
-        email: employee.email || '',
+        first_name:
+          employee.first_name || '',
+
+        last_name:
+          employee.last_name || '',
+
+        contact_number:
+          employee.contact_number || '',
+
+        email:
+          employee.email || '',
 
         password: '',
         confirmPassword: '',
 
-        is_active: employee.is_active ?? true,
+        is_active:
+          employee.is_active ?? true,
 
-        // EMS fields initially empty
         department_id: '',
         display_name: '',
         date_of_birth: '',
         gender: '',
         preferred_language: '',
         timezone: '',
-        user_id: '',
-        user_code: '',
+
+        user_code:
+          employee.member_code || ''
       });
 
-      setEditingId(localEmployeeId);
-      setSelectedEmployee(employee);
+
+      // ------------------------------------
+      // SHOW FORM
+      // ------------------------------------
+
       setActiveTab('form');
 
-      // ------------------------------------------------
-      // STEP 2: Fetch EMS data
-      // ------------------------------------------------
 
-      const emsData = await fetchEMSEmployee(memberId);
+      // ------------------------------------
+      // GET EMS DATA
+      // ------------------------------------
 
-      console.log('EMS data received:', emsData);
+      const emsMember =
+        await fetchEMSMember(
+          memberId
+        );
 
-      // ------------------------------------------------
-      // STEP 3: Merge EMS data into form
-      // ------------------------------------------------
+      console.log(
+        'EMS Member:',
+        emsMember
+      );
+
+
+      // ------------------------------------
+      // MERGE EMS DATA INTO FORM
+      // ------------------------------------
 
       setFormData(prev => ({
         ...prev,
 
+        user_code:
+          emsMember.member_code || '',
+
         display_name:
-          emsData?.displayName || '',
+          emsMember.displayName || '',
+
+        first_name:
+          emsMember.first_name ||
+          prev.first_name,
+
+        last_name:
+          emsMember.last_name ||
+          prev.last_name,
 
         date_of_birth:
-          emsData?.dob
-            ? emsData.dob.substring(0, 10)
+          emsMember.dob
+            ? emsMember.dob.substring(0, 10)
             : '',
 
         gender:
-          emsData?.gender || '',
-
-        department_id:
-          emsData?.department_id?.id
-            ? String(emsData.department_id.id)
-            : '',
+          emsMember.gender || '',
 
         preferred_language:
-          emsData?.preferredLanguage || '',
+          emsMember.preferredLanguage || '',
 
         timezone:
-          emsData?.timezone || '',
+          emsMember.timezone || '',
 
-        user_id:
-          emsData?.id
-            ? String(emsData.id)
-            : '',
-
-        user_code:
-          emsData?.member_code || '',
+        department_id:
+          emsMember.department_id?.id
+            ? String(emsMember.department_id.id)
+            : ''
       }));
 
     } catch (error) {
 
-      console.error('Error loading employee for edit:', error);
+      console.error(
+        'Error loading employee:',
+        error
+      );
 
       toast.error(
         error.message ||
@@ -625,9 +782,12 @@ function Employees() {
       );
 
     } finally {
+
       setSaving(false);
+
     }
   };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete user "${name}"?`)) return;
 
@@ -956,19 +1116,6 @@ function Employees() {
                       <option value="female">Female</option>
                       <option value="other">Other</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      User ID <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="user_id"
-                      value={formData.user_id}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
