@@ -1,44 +1,4 @@
-// import React from 'react';
-// import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-// import Login from './pages/Login';
-// import AdminDashboard from './pages/AdminDashboard';
-// import EmployeeDashboard from './pages/EmployeeDashboard';
-// import { AuthProvider, useAuth } from './context/AuthContext';
 
-// function App() {
-//   return (
-//     <AuthProvider>
-//       <AppRoutes />
-//     </AuthProvider>
-//   );
-// }
-
-// function AppRoutes() {
-//   const { token, user, loading, logout } = useAuth();
-
-//   if (loading) {
-//     return null;
-//   }
-
-//   return (
-//     <Router>
-//       <Routes>
-//         <Route path="/login" element={
-//           !token ? <Login /> : <Navigate to="/" />
-//         } />
-//         <Route path="/" element={
-//           token ? (
-//             user?.role === 'admin' ? 
-//               <AdminDashboard handleLogout={logout} /> : 
-//               <EmployeeDashboard handleLogout={logout} />
-//           ) : <Navigate to="/login" />
-//         } />
-//       </Routes>
-//     </Router>
-//   );
-// }
-
-// export default App;
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -46,6 +6,8 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -67,6 +29,7 @@ import InvestigationManager from "./pages/incidentInvestigation";
 import PostIncidentReviewForm from "./pages/RCA";
 import TerminalHierarchy from "./pages/RoomsAvaiblity";
 import { Toaster } from 'react-hot-toast';
+import Departments from "./pages/departments";
 
 function App() {
   return (
@@ -83,7 +46,14 @@ function AppRoutes() {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+      />
 
       <Routes>
         {/* Login */}
@@ -181,7 +151,14 @@ function AppRoutes() {
             path="incident/post-incident-review"
             element={<PostIncidentReviewForm />}
           />
+
+          <Route
+            path="departments"
+            element={<Departments />}
+          />
         </Route>
+
+
 
         {/* Invalid URL */}
         <Route

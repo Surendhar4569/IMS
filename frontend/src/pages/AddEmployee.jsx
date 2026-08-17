@@ -36,10 +36,11 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
 import bcrypt from 'bcryptjs';
+import vgtAPI from "../utils/axiosConfig";
 
 const employeesApi = `${import.meta.env.VITE_API_URL}/employees`;
 const rolesApi = `${import.meta.env.VITE_API_URL}/roles`;
-const departmentsApi = `${import.meta.env.VITE_API_URL}/departments/`;
+
 
 function Employees() {
   // State Management
@@ -86,6 +87,7 @@ function Employees() {
     first_name: '',
     last_name: '',
     contact_number: '',
+    phone_type: '',
     email: '',
 
     password: '',
@@ -93,15 +95,23 @@ function Employees() {
 
     is_active: true,
 
-    // EMS fields
     department_id: '',
     display_name: '',
     date_of_birth: '',
     gender: '',
     preferred_language: '',
     timezone: '',
-    user_id: '',
+
     user_code: '',
+
+    // Phone preferences
+    is_primary: true,
+    is_sms_enabled: true,
+    is_voice_enabled: false,
+    is_whatsapp_enabled: false,
+
+    // Email preference
+    is_primary_email: true
   });
 
   // Statistics
@@ -152,20 +162,152 @@ function Employees() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(departmentsApi, {
-        ...getAuthConfig(),
-        params: {
-          user_id: user?.id,
-          salt: user?.salt
-        }
-      });
-
-      //console.log("Departments fetched:", response.data);
+      const response = await vgtAPI.get(`/department/`);
       setDepartments(response.data.department || []);
-      //console.log("Departments state updated:", response.data.data);
-
     } catch (err) {
       console.error("Error fetching departments:", err);
+    }
+  };
+  const fetchEMSMember = async (memberId) => {
+    try {
+      if (!memberId) {
+        throw new Error('EMS member ID not found');
+      }
+
+      console.log(
+        'Fetching EMS member:',
+        memberId
+      );
+
+      const response = await vgtAPI.get(
+        `/members/${memberId}`
+      );
+
+      console.log(
+        'EMS member response:',
+        response.data
+      );
+
+      const emsData = response.data;
+
+      // Check EMS error response
+      if (
+        emsData?.error_response?.error_code !== 0
+      ) {
+        throw new Error(
+          emsData?.error_response?.error_message ||
+          'Failed to fetch EMS member'
+        );
+      }
+
+      const emsMember =
+        emsData?.members?.[0];
+
+      if (!emsMember) {
+        throw new Error(
+          'EMS member data not found'
+        );
+      }
+
+      return emsMember;
+
+    } catch (error) {
+
+      console.error(
+        'EMS member fetch error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response
+          ?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch EMS employee', { cause: error }
+      );
+    }
+  };
+  const fetchEMSMemberPhone = async (memberId) => {
+    try {
+      console.log('Fetching EMS phone:', memberId);
+      const response = await vgtAPI.get(
+        `/members_phones/${memberId}`
+      );
+
+      console.log(
+        'EMS Phone GET Response:',
+        response.data
+      );
+
+      const data = response.data;
+
+      if (
+        data?.error_response?.error_code !== 0
+      ) {
+        throw new Error(
+          data?.error_response?.error_message ||
+          'Failed to fetch EMS phone'
+        );
+      }
+
+      return data;
+
+    } catch (error) {
+
+      console.error(
+        'EMS Phone GET Error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response
+          ?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch EMS phone', { cause: error }
+      );
+    }
+  };
+
+  const fetchEMSMemberEmail = async (memberId) => {
+    try {
+      console.log('Fetching EMS email:', memberId);
+      const response = await vgtAPI.get(
+        `/members_emails/${memberId}`
+      );
+
+      console.log(
+        'EMS Email GET Response:',
+        response.data
+      );
+
+      const data = response.data;
+
+      if (
+        data?.error_response?.error_code !== 0
+      ) {
+        throw new Error(
+          data?.error_response?.error_message ||
+          'Failed to fetch EMS email'
+        );
+      }
+
+      return data;
+
+    } catch (error) {
+
+      console.error(
+        'EMS Email GET Error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response
+          ?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to fetch EMS email', { cause: error }
+      );
     }
   };
 
@@ -253,14 +395,146 @@ function Employees() {
       preferred_language: '',
       timezone: '',
 
-      user_id: '',
       user_code: ''
     });
 
     setEditingId(null);
     setSelectedEmployee(null);
   };
+  const createEMSMember = async (emsPayload) => {
+    try {
+      const response = await vgtAPI.post(
+        `/members/`,
+        emsPayload
+      );
 
+      console.log(
+        'EMS create response:',
+        response.data
+      );
+
+      const emsData = response.data;
+
+      // Check EMS business-level error
+      if (
+        emsData?.error_response?.error_code !== 0
+      ) {
+        throw new Error(
+          emsData?.error_response?.error_message ||
+          'EMS employee creation failed'
+        );
+      }
+
+      const emsMember =
+        emsData?.members?.[0];
+
+      if (!emsMember) {
+        throw new Error(
+          'EMS employee was not returned after creation'
+        );
+      }
+
+      return emsMember;
+
+    } catch (error) {
+
+      console.error(
+        'EMS employee creation error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'EMS employee creation failed', { cause: error }
+      );
+    }
+  };
+  const createEMSMemberPhone = async (phonePayload) => {
+    try {
+      console.log('EMS phone payload:', phonePayload);
+      const response = await vgtAPI.post(
+        `/members_phones/`,
+        phonePayload
+      );
+
+      console.log(
+        'EMS phone response:',
+        response.data
+      );
+
+      const data = response.data;
+
+      if (
+        data?.error_response &&
+        data.error_response.error_code !== 0
+      ) {
+        throw new Error(
+          data.error_response.error_message ||
+          'EMS phone creation failed'
+        );
+      }
+
+      return data;
+
+    } catch (error) {
+
+      console.error(
+        'EMS phone creation error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'EMS phone creation failed', { cause: error }
+      );
+    }
+  };
+  const createEMSMemberEmail = async (emailPayload) => {
+    try {
+      console.log('EMS email payload:', emailPayload);
+      const response = await vgtAPI.post(
+        `/members_emails/`,
+        emailPayload
+      );
+
+      console.log(
+        'EMS email response:',
+        response.data
+      );
+
+      const data = response.data;
+
+      if (
+        data?.error_response &&
+        data.error_response.error_code !== 0
+      ) {
+        throw new Error(
+          data.error_response.error_message ||
+          'EMS email creation failed'
+        );
+      }
+
+      return data;
+
+    } catch (error) {
+
+      console.error(
+        'EMS email creation error:',
+        error
+      );
+
+      throw new Error(
+        error.response?.data?.error_response?.error_message ||
+        error.response?.data?.message ||
+        error.message ||
+        'EMS email creation failed', { cause: error }
+      );
+    }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -329,34 +603,114 @@ function Employees() {
           updatedat: dateandtime
         },
 
-        displayName: formData.display_name,
+        displayName:
+          formData.display_name,
 
-        dob: formData.date_of_birth
-          ? `${formData.date_of_birth}T00:00:00.000Z`
-          : null,
+        dob:
+          formData.date_of_birth
+            ? `${formData.date_of_birth}T00:00:00.000Z`
+            : null,
 
-        first_name: formData.first_name.trim(),
+        first_name:
+          formData.first_name.trim(),
 
-        gender: formData.gender,
+        gender:
+          formData.gender,
 
-        id: formData.user_id,
+        last_name:
+          formData.last_name.trim(),
 
-        last_name: formData.last_name.trim(),
+        member_code:
+          formData.user_code,
 
-        member_code: formData.user_code,
+        passwordhash:
+          hashedPassword,
 
-        passwordhash: hashedPassword,
+        preferredLanguage:
+          formData.preferred_language,
 
-        preferredLanguage: formData.preferred_language,
+        status:
+          formData.is_active
+            ? "active"
+            : "inactive",
 
-        status: formData.is_active
-          ? "active"
-          : "inactive",
+        timezone:
+          timeZone,
 
-        timezone: timeZone,
-
-        updateat: dateandtime
+        updateat:
+          dateandtime
       };
+
+      const EMS_Members_phone_payload = {
+        createdat: dateandtime,
+        is_primary: formData.is_primary ? 1 : 0,
+        is_sms_enabled: formData.is_sms_enabled ? 1 : 0,
+        is_voice_enabled: formData.is_voice_enabled ? 1 : 0,
+        is_whatsapp_enabled: formData.is_whatsapp_enabled ? 1 : 0,
+        member_id: {
+          createdat: dateandtime,
+          department_id: {
+            code: "",
+            createdat: dateandtime,
+            id: formData.department_id,
+            name: "",
+            status: "active",
+            updatedat: dateandtime
+          },
+          displayName: formData.display_name,
+          dob: formData.date_of_birth
+            ? `${formData.date_of_birth}T00:00:00.000Z`
+            : null,
+          first_name: formData.first_name.trim(),
+          gender: formData.gender,
+          id: "",
+          last_name: formData.last_name.trim(),
+          member_code: formData.user_code,
+          passwordhash: "",
+          preferredLanguage: formData.preferred_language,
+          status: "active",
+          timezone: "",
+          updateat: dateandtime
+        },
+        phone_number: formData.contact_number,
+        phone_type: formData.phone_type,
+        status: "active",
+        updatedat: dateandtime
+      };
+
+      const EMS_Members_email_payload = {
+        createdat: dateandtime,
+        email: formData.email.trim(),
+        is_primary: formData.is_primary_email ? 1 : 0,
+        member_id: {
+          createdat: dateandtime,
+          department_id: {
+            code: "",
+            createdat: dateandtime,
+            id: formData.department_id,
+            name: "",
+            status: "active",
+            updatedat: dateandtime
+          },
+          displayName: formData.display_name,
+          dob: formData.date_of_birth
+            ? `${formData.date_of_birth}T00:00:00.000Z`
+            : null,
+          first_name: formData.first_name.trim(),
+          gender: formData.gender,
+          id: "",
+          last_name: formData.last_name.trim(),
+          member_code: formData.user_code,
+          passwordhash: "",
+          preferredLanguage: formData.preferred_language,
+          status: "active",
+          timezone: "",
+          updateat: dateandtime
+        },
+        status: "active",
+        updatedat: dateandtime
+      };
+
 
       if (editingId) {
 
@@ -384,34 +738,161 @@ function Employees() {
 
       } else {
 
-        const response = await axios.post(
-          `${employeesApi}/register`,
-          {
-            payload,
-            emsPayload: EMSPayload
-          },
-          {
-            ...getAuthConfig(),
-            params: {
-              user_id: user?.id,
-              salt: user?.salt
-            }
+        try {
+
+          // =====================================================
+          // STEP 1: CREATE EMS MEMBER
+          // =====================================================
+
+          console.log('STEP 1: Creating EMS member...');
+
+          const emsMember = await createEMSMember(
+            EMSPayload
+          );
+
+          console.log(
+            'EMS member created successfully:',
+            emsMember
+          );
+
+
+          // Make sure EMS generated ID exists
+
+          if (!emsMember?.id) {
+            throw new Error(
+              'EMS member ID was not returned after member creation'
+            );
           }
-        );
 
-        if (response.status >= 200 && response.status < 300) {
 
-          setMessage({
-            type: 'success',
-            text:
+          // =====================================================
+          // STEP 2: CREATE EMS PHONE
+          // =====================================================
+
+          console.log(
+            'STEP 2: Creating EMS phone...'
+          );
+
+
+          const phonePayload = {
+            ...EMS_Members_phone_payload,
+
+            member_id: {
+              ...EMS_Members_phone_payload.member_id,
+              id: emsMember.id
+            }
+          };
+
+
+          const phoneResponse =
+            await createEMSMemberPhone(
+              phonePayload
+            );
+
+
+          console.log(
+            'EMS phone created successfully:',
+            phoneResponse
+          );
+
+
+          // =====================================================
+          // STEP 3: CREATE EMS EMAIL
+          // =====================================================
+
+          console.log(
+            'STEP 3: Creating EMS email...'
+          );
+
+
+          const emailPayload = {
+            ...EMS_Members_email_payload,
+
+            member_id: {
+              ...EMS_Members_email_payload.member_id,
+              id: emsMember.id
+            }
+          };
+
+
+          const emailResponse =
+            await createEMSMemberEmail(
+              emailPayload
+            );
+
+
+          console.log(
+            'EMS email created successfully:',
+            emailResponse
+          );
+
+
+          // =====================================================
+          // STEP 4: ONLY NOW CREATE LOCAL EMPLOYEE
+          // =====================================================
+
+          console.log(
+            'STEP 4: Creating employee in local database...'
+          );
+
+
+          const localPayload = {
+
+            ...payload,
+
+            member_id: emsMember.id,
+
+            member_code: emsMember.member_code
+
+          };
+
+
+          const response = await axios.post(
+            `${employeesApi}/register`,
+            {
+              payload: localPayload
+            },
+            {
+              ...getAuthConfig()
+            }
+          );
+
+
+          if (
+            response.status >= 200 &&
+            response.status < 300
+          ) {
+
+            setMessage({
+              type: 'success',
+              text:
+                response.data?.message ||
+                'User registered successfully'
+            });
+
+
+            toast.success(
               response.data?.message ||
               'User registered successfully'
-          });
+            );
 
-          toast.success(
-            response.data?.message ||
-            'User registered successfully'
+          }
+
+        } catch (error) {
+
+          console.error(
+            'Employee registration process failed:',
+            error
           );
+
+
+          toast.error(
+            error.message ||
+            'Employee registration failed'
+          );
+
+
+          return;
         }
       }
 
@@ -482,142 +963,235 @@ function Employees() {
   //   setActiveTab('form');
   // };
 
-  const fetchEMSEmployee = async (memberId) => {
-    try {
-      if (!memberId) {
-        throw new Error('EMS Member ID not found');
-      }
 
-      console.log('Fetching EMS employee:', memberId);
-
-      const response = await axios.get(
-        `${employeesApi}/${memberId}/`,
-        {
-          ...getAuthConfig(),
-          params: {
-            user_id: user?.id,
-            salt: user?.salt,
-          },
-        }
-      );
-
-      console.log('EMS employee response:', response.data);
-
-      return response.data.data;
-
-    } catch (error) {
-      console.error('EMS employee fetch error:', error);
-
-      throw new Error(
-        error.response?.data?.message ||
-        'Failed to fetch employee details from EMS', { cause: error }
-      );
-    }
-  };
 
   const handleEdit = async (employee) => {
     try {
-      console.log('Edit employee:', employee);
-
       setSaving(true);
 
-      // Local DB employee ID
+      console.log('Editing employee:', employee);
+
+      // ============================================
+      // LOCAL EMPLOYEE ID
+      // ============================================
+
       const localEmployeeId = employee.id;
 
-      // EMS member ID
+      // ============================================
+      // EMS MEMBER ID
+      // ============================================
+
       const memberId = employee.member_id;
 
-      console.log('Local Employee ID:', localEmployeeId);
+      console.log('Local ID:', localEmployeeId);
       console.log('EMS Member ID:', memberId);
 
       if (!memberId) {
-        toast.error('EMS Member ID not found for this employee');
+        toast.error(
+          'EMS member ID not found for this employee'
+        );
         return;
       }
 
-      // ------------------------------------------------
-      // STEP 1: Fill local DB data
-      // ------------------------------------------------
-
-      setFormData({
-        role_id: employee.role_id
-          ? String(employee.role_id)
-          : '',
-
-        first_name: employee.first_name || '',
-        last_name: employee.last_name || '',
-        contact_number: employee.contact_number || '',
-        email: employee.email || '',
-
-        password: '',
-        confirmPassword: '',
-
-        is_active: employee.is_active ?? true,
-
-        // EMS fields initially empty
-        department_id: '',
-        display_name: '',
-        date_of_birth: '',
-        gender: '',
-        preferred_language: '',
-        timezone: '',
-        user_id: '',
-        user_code: '',
-      });
-
       setEditingId(localEmployeeId);
       setSelectedEmployee(employee);
-      setActiveTab('form');
 
-      // ------------------------------------------------
-      // STEP 2: Fetch EMS data
-      // ------------------------------------------------
+      // ============================================
+      // FETCH ALL THREE EMS APIs
+      // ============================================
 
-      const emsData = await fetchEMSEmployee(memberId);
+      console.log(
+        'Fetching EMS member, phone and email...'
+      );
 
-      console.log('EMS data received:', emsData);
+      const [
+        emsMember,
+        phoneResponse,
+        emailResponse
+      ] = await Promise.all([
+        fetchEMSMember(memberId),
+        fetchEMSMemberPhone(memberId),
+        fetchEMSMemberEmail(memberId)
+      ]);
 
-      // ------------------------------------------------
-      // STEP 3: Merge EMS data into form
-      // ------------------------------------------------
+      console.log(
+        'EMS Member Response:',
+        emsMember
+      );
 
-      setFormData(prev => ({
-        ...prev,
+      console.log(
+        'EMS Phone Response:',
+        phoneResponse
+      );
+
+      console.log(
+        'EMS Email Response:',
+        emailResponse
+      );
+
+      // ============================================
+      // GET PHONE DATA
+      // ============================================
+
+      const phoneData =
+        phoneResponse?.members_phones?.[0];
+
+      if (!phoneData) {
+        throw new Error(
+          'EMS phone data not found'
+        );
+      }
+
+      // ============================================
+      // GET EMAIL DATA
+      // ============================================
+
+      const emailData =
+        emailResponse?.members_emails?.[0];
+
+      if (!emailData) {
+        throw new Error(
+          'EMS email data not found'
+        );
+      }
+
+      console.log(
+        'Phone Data:',
+        phoneData
+      );
+
+      console.log(
+        'Email Data:',
+        emailData
+      );
+
+      // ============================================
+      // FILL FORM DATA
+      // ============================================
+
+      setFormData({
+
+        // ==========================================
+        // LOCAL EMPLOYEE DATA
+        // ==========================================
+
+        role_id:
+          employee.role_id
+            ? String(employee.role_id)
+            : '',
+
+        is_active:
+          employee.is_active ?? true,
+
+
+        // ==========================================
+        // EMS MEMBER DATA
+        // ==========================================
+
+        first_name:
+          emsMember?.first_name ||
+          employee.first_name ||
+          '',
+
+        last_name:
+          emsMember?.last_name ||
+          employee.last_name ||
+          '',
 
         display_name:
-          emsData?.displayName || '',
+          emsMember?.displayName ||
+          '',
 
         date_of_birth:
-          emsData?.dob
-            ? emsData.dob.substring(0, 10)
+          emsMember?.dob
+            ? emsMember.dob.substring(0, 10)
             : '',
 
         gender:
-          emsData?.gender || '',
+          emsMember?.gender ||
+          '',
 
         department_id:
-          emsData?.department_id?.id
-            ? String(emsData.department_id.id)
+          emsMember?.department_id?.id
+            ? String(
+              emsMember.department_id.id
+            )
             : '',
 
         preferred_language:
-          emsData?.preferredLanguage || '',
+          emsMember?.preferredLanguage ||
+          '',
 
         timezone:
-          emsData?.timezone || '',
-
-        user_id:
-          emsData?.id
-            ? String(emsData.id)
-            : '',
+          emsMember?.timezone ||
+          '',
 
         user_code:
-          emsData?.member_code || '',
-      }));
+          emsMember?.member_code ||
+          employee.member_code ||
+          '',
+
+
+        // ==========================================
+        // PHONE DATA
+        // ==========================================
+
+        contact_number:
+          phoneData?.phone_number ||
+          employee.contact_number ||
+          '',
+
+        phone_type:
+          phoneData?.phone_type ||
+          '',
+
+        is_primary:
+          Number(phoneData?.is_primary) === 1,
+
+        is_sms_enabled:
+          Number(phoneData?.is_sms_enabled) === 1,
+
+        is_voice_enabled:
+          Number(phoneData?.is_voice_enabled) === 1,
+
+        is_whatsapp_enabled:
+          Number(phoneData?.is_whatsapp_enabled) === 1,
+
+
+        // ==========================================
+        // EMAIL DATA
+        // ==========================================
+
+        email:
+          emailData?.email ||
+          employee.email ||
+          '',
+
+        is_primary_email:
+          Number(emailData?.is_primary) === 1,
+
+
+        // ==========================================
+        // PASSWORD
+        // ==========================================
+
+        password: '',
+        confirmPassword: ''
+
+      });
+
+      // ============================================
+      // OPEN FORM
+      // ============================================
+
+      setActiveTab('form');
 
     } catch (error) {
 
-      console.error('Error loading employee for edit:', error);
+      console.error(
+        'Error loading employee details:',
+        error
+      );
 
       toast.error(
         error.message ||
@@ -625,9 +1199,12 @@ function Employees() {
       );
 
     } finally {
+
       setSaving(false);
+
     }
   };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete user "${name}"?`)) return;
 
@@ -870,205 +1447,669 @@ function Employees() {
           </div>
         )}
 
-        {/* Form Section - Custom 4-Row Layout */}
+        {/* Form Section - Section Wise Layout */}
         {activeTab === 'form' && (
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
                 {editingId ? 'Edit User' : 'Add New User'}
               </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {editingId
+                  ? 'Update user information and account details'
+                  : 'Enter user information and account details'}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6">
-              <div className="space-y-6">
+              <div className="space-y-8">
 
-                {/* Row 1: 4 Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
+                {/* =====================================================
+                    PERSONAL INFORMATION
+                ====================================================== */}
+                <section>
+                  <div className="flex items-center gap-3 mb-5">
+                    <h3 className="text-sm font-bold text-[#0B1D3A] uppercase tracking-wider whitespace-nowrap">
+                      Personal Information
+                    </h3>
+                    <div className="flex-1 h-px bg-gray-200" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Display Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="display_name"
-                      value={formData.display_name}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date of Birth <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="date_of_birth"
-                      value={formData.date_of_birth}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
-                  </div>
-                </div>
 
-                {/* Row 2: 4 Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Gender <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
-                      required
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      User ID <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="user_id"
-                      value={formData.user_id}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      User Code <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="user_code"
-                      value={formData.user_code}
-                      onChange={handleInputChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Department <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <select
-                        name="department_id"
-                        value={formData.department_id}
-                        onChange={handleInputChange}
-                        className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
-                        required
-                      >
-                        <option value="">Select Department</option>
-                        {departments.map(department => (
-                          <option key={department.id} value={department.id}>{department.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 3: Contact & Email Fields (3 Fields) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Role <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <select
-                        name="role_id"
-                        value={formData.role_id}
-                        onChange={handleInputChange}
-                        className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
-                        required
-                      >
-                        <option value="">Select Role</option>
-                        {roles.map(role => (
-                          <option key={role.id} value={role.id}>{role.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
                       <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
+                        type="text"
+                        name="first_name"
+                        value={formData.first_name}
                         onChange={handleInputChange}
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="last_name"
+                        value={formData.last_name}
+                        onChange={handleInputChange}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Display Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="display_name"
+                        value={formData.display_name}
+                        onChange={handleInputChange}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Birth <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="date_of_birth"
+                        value={formData.date_of_birth}
+                        onChange={handleInputChange}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
                         required
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="tel"
-                        name="contact_number"
-                        value={formData.contact_number}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Gender <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
                         onChange={handleInputChange}
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                        required
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* =====================================================
+                    USER LEVEL
+                ====================================================== */}
+                <section className="border-t border-gray-200 pt-7">
+                  <div className="flex items-center gap-3 mb-5">
+                    <h3 className="text-sm font-bold text-[#0B1D3A] uppercase tracking-wider whitespace-nowrap">
+                      User Level
+                    </h3>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        User Role <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <select
+                          name="role_id"
+                          value={formData.role_id}
+                          onChange={handleInputChange}
+                          className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                          required
+                        >
+                          <option value="">Select Role</option>
+                          {roles.map(role => (
+                            <option key={role.id} value={role.id}>
+                              {role.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Department <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <select
+                          name="department_id"
+                          value={formData.department_id}
+                          onChange={handleInputChange}
+                          className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                          required
+                        >
+                          <option value="">Select Department</option>
+                          {departments.map(department => (
+                            <option key={department.id} value={department.id}>
+                              {department.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        User Code <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="user_code"
+                        value={formData.user_code}
+                        onChange={handleInputChange}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
                         required
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Preffered Language <span className="text-red-500">*</span>
+                </section>
+                {/* =====================================================
+    CONTACT INFORMATION
+===================================================== */}
+
+                <section className="border-t border-gray-200 pt-7">
+
+                  <div className="flex items-center gap-3 mb-5">
+
+                    <h3 className="text-sm font-bold text-[#0B1D3A] uppercase tracking-wider whitespace-nowrap">
+                      Contact Information
+                    </h3>
+
+                    <div className="flex-1 h-px bg-gray-200" />
+
+                  </div>
+
+
+                  {/* =====================================================
+      CONTACT NUMBER + TYPE
+  ====================================================== */}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* Contact Number */}
+
+                    <div>
+
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+
+                        Contact Number
+                        <span className="text-red-500"> *</span>
+
+                      </label>
+
+                      <div className="relative">
+
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+                        <input
+                          type="tel"
+                          name="contact_number"
+                          value={formData.contact_number}
+                          onChange={handleInputChange}
+                          placeholder="Enter contact number"
+                          className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                          required
+                        />
+
+                      </div>
+
+                    </div>
+
+
+                    {/* Contact Number Type */}
+
+                    <div>
+
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+
+                        Contact Number Type
+                        <span className="text-red-500"> *</span>
+
+                      </label>
+
+                      <div className="flex flex-wrap gap-2">
+
+                        {[
+                          {
+                            value: 'mobile',
+                            label: 'Mobile'
+                          },
+                          {
+                            value: 'home',
+                            label: 'Home'
+                          },
+                          {
+                            value: 'work',
+                            label: 'Work'
+                          },
+                          {
+                            value: 'other',
+                            label: 'Other'
+                          }
+                        ].map(type => (
+
+                          <label
+                            key={type.value}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all ${formData.phone_type === type.value
+                              ? 'border-[#0B1D3A] bg-blue-50 text-[#0B1D3A]'
+                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                              }`}
+                          >
+
+                            <input
+                              type="radio"
+                              name="phone_type"
+                              value={type.value}
+                              checked={
+                                formData.phone_type === type.value
+                              }
+                              onChange={handleInputChange}
+                              className="w-4 h-4 accent-[#0B1D3A]"
+                              required
+                            />
+
+                            <span className="text-sm font-medium">
+                              {type.label}
+                            </span>
+
+                          </label>
+
+                        ))}
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =====================================================
+      COMMUNICATION PREFERENCES
+  ====================================================== */}
+
+                  <div className="mt-6">
+
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Communication Preferences
                     </label>
-                    <div className="relative">
+
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+
+                      {/* Is Primary */}
+
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+
+                        <div>
+
+                          <p className="text-sm font-medium text-gray-700">
+                            Is Primary?
+                          </p>
+
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Set this as the primary contact number
+                          </p>
+
+                        </div>
+
+
+                        <div className="flex items-center rounded-lg border border-gray-300 bg-white overflow-hidden">
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_primary: true
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${formData.is_primary
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            Yes
+                          </button>
+
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_primary: false
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${!formData.is_primary
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            No
+                          </button>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* SMS Enabled */}
+
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+
+                        <div>
+
+                          <p className="text-sm font-medium text-gray-700">
+                            SMS Enabled?
+                          </p>
+
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Allow SMS notifications
+                          </p>
+
+                        </div>
+
+
+                        <div className="flex items-center rounded-lg border border-gray-300 bg-white overflow-hidden">
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_sms_enabled: true
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${formData.is_sms_enabled
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            Yes
+                          </button>
+
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_sms_enabled: false
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${!formData.is_sms_enabled
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            No
+                          </button>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* Voice Enabled */}
+
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+
+                        <div>
+
+                          <p className="text-sm font-medium text-gray-700">
+                            Voice Enabled?
+                          </p>
+
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Allow voice calls
+                          </p>
+
+                        </div>
+
+
+                        <div className="flex items-center rounded-lg border border-gray-300 bg-white overflow-hidden">
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_voice_enabled: true
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${formData.is_voice_enabled
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            Yes
+                          </button>
+
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_voice_enabled: false
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${!formData.is_voice_enabled
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            No
+                          </button>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* WhatsApp Enabled */}
+
+                      <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+
+                        <div>
+
+                          <p className="text-sm font-medium text-gray-700">
+                            WhatsApp Enabled?
+                          </p>
+
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Allow WhatsApp messages
+                          </p>
+
+                        </div>
+
+
+                        <div className="flex items-center rounded-lg border border-gray-300 bg-white overflow-hidden">
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_whatsapp_enabled: true
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${formData.is_whatsapp_enabled
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            Yes
+                          </button>
+
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_whatsapp_enabled: false
+                              }))
+                            }
+                            className={`px-4 py-1.5 text-sm font-medium transition-all ${!formData.is_whatsapp_enabled
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            No
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =====================================================
+      EMAIL
+  ====================================================== */}
+
+                  <div className="mt-6">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+
+                      {/* Email */}
+
+                      <div>
+
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+
+                          Email
+                          <span className="text-red-500"> *</span>
+
+                        </label>
+
+                        <div className="relative">
+
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            placeholder="Enter email address"
+                            className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                            required
+                          />
+
+                        </div>
+
+                      </div>
+
+
+                      {/* Primary Email */}
+
+                      <div>
+
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+
+                          Is this your primary email address?
+                          <span className="text-red-500"> *</span>
+
+                        </label>
+
+
+                        <div className="flex items-center rounded-lg border border-gray-300 bg-white overflow-hidden w-fit">
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_primary_email: true
+                              }))
+                            }
+                            className={`px-5 py-2 text-sm font-medium transition-all ${formData.is_primary_email
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            Yes
+                          </button>
+
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                is_primary_email: false
+                              }))
+                            }
+                            className={`px-5 py-2 text-sm font-medium transition-all ${!formData.is_primary_email
+                              ? 'bg-[#0B1D3A] text-white'
+                              : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                          >
+                            No
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </section>
+
+                {/* =====================================================
+                    PREFERENCES
+                ====================================================== */}
+                <section className="border-t border-gray-200 pt-7">
+                  <div className="flex items-center gap-3 mb-5">
+                    <h3 className="text-sm font-bold text-[#0B1D3A] uppercase tracking-wider whitespace-nowrap">
+                      Preferences
+                    </h3>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Preferred Language <span className="text-red-500">*</span>
+                      </label>
                       <select
                         name="preferred_language"
                         value={formData.preferred_language}
                         onChange={handleInputChange}
-                        className="w-full appearance-none pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
+                        className="w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all bg-white"
                         required
                       >
                         <option value="">Select Language</option>
@@ -1083,65 +2124,95 @@ function Employees() {
                         <option value="ru">Russian</option>
                       </select>
                     </div>
-                  </div>
-                </div>
 
-
-                {/* Row 4: Passwords & Active Status */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    {/* <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Timezone
+                      </label>
                       <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        placeholder="Enter password"
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        type="text"
+                        value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                        readOnly
+                        className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-600 focus:outline-none"
                       />
+                    </div> */}
+                  </div>
+                </section>
+
+                {/* =====================================================
+                    ACCOUNT SECURITY
+                ====================================================== */}
+                <section className="border-t border-gray-200 pt-7">
+                  <div className="flex items-center gap-3 mb-5">
+                    <h3 className="text-sm font-bold text-[#0B1D3A] uppercase tracking-wider whitespace-nowrap">
+                      Account Security
+                    </h3>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Password <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          placeholder="Enter password"
+                          className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Confirm Password <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          placeholder="Confirm password"
+                          className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-2 flex items-center gap-3 min-h-[42px]">
+                      <label
+                        htmlFor="is_active"
+                        className="relative inline-flex items-center cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          name="is_active"
+                          id="is_active"
+                          checked={formData.is_active}
+                          onChange={handleInputChange}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0B1D3A]" />
+                      </label>
+                      <span className="text-sm font-medium text-gray-700">
+                        {formData.is_active
+                          ? 'Active Account'
+                          : 'Inactive Account'}
+                      </span>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        placeholder="Confirm password"
-                        className="w-full pl-10 rounded-lg border border-gray-300 px-3 py-2 focus:border-[#0B1D3A] focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <label htmlFor="is_active" className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="is_active"
-                        id="is_active"
-                        checked={formData.is_active}
-                        onChange={handleInputChange}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0B1D3A]"></div>
-                    </label>
-                    <span className="text-sm font-medium text-gray-700">
-                      {formData.is_active ? 'Active Account' : 'Inactive Account'}
-                    </span>
-                  </div>
-                </div>
+                </section>
 
               </div>
 
-              <div className="flex gap-3 mt-8 pt-6 border-t">
+              {/* Form Actions */}
+              <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
                 <button
                   type="submit"
                   disabled={saving}
@@ -1154,11 +2225,14 @@ function Employees() {
                     </>
                   ) : (
                     <>
-                      {editingId ? <RefreshCw className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                      {editingId
+                        ? <RefreshCw className="w-4 h-4" />
+                        : <UserPlus className="w-4 h-4" />}
                       {editingId ? 'Update User' : 'Register User'}
                     </>
                   )}
                 </button>
+
                 <button
                   type="button"
                   onClick={() => {

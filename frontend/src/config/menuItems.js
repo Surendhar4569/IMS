@@ -22,6 +22,11 @@ export const menuItems = [
                 label: "Roles",
                 path: "/roles",
             },
+            {
+                id: "departments",
+                label: "Departments",
+                path: "/departments",
+            },
         ]
     },
     {

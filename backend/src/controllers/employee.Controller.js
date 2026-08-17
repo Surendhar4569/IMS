@@ -1,5 +1,4 @@
 import { pool } from '../config/database.js';
-import { getExternalToken } from "../utils/getExternalToken.js";
 import bcrypt from 'bcrypt';
 import https from "https";
 import axios from "axios";
@@ -30,33 +29,294 @@ const formatEmployeeResponse = (employee) => {
     created_at: employee.created_at,
     updated_at: employee.updated_at,
     role_name: employee.role_name,
-    full_name: `${employee.first_name} ${employee.last_name}`
+    full_name: `${employee.first_name} ${employee.last_name}`,
+    member_id: employee.member_id,
+    member_code: employee.member_code
   };
 };
 
 // CREATE - Register new employee 
 
 
+// export const registerEmployee = async (req, res) => {
+//   const client = await pool.connect();
+
+//   try {
+//     const payload = req.body.payload;
+//     //const emsPayload = req.body.emsPayload;
+
+//     //const { user_id, salt } = req.query;
+
+//     if (!payload) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Employee payload is required'
+//       });
+//     }
+
+//     if (!emsPayload) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'EMS payload is required'
+//       });
+//     }
+
+//     const {
+//       role_id,
+//       first_name,
+//       last_name,
+//       contact_number,
+//       email,
+//       password,
+//       is_active = true
+//     } = payload;
+
+
+//     if (!first_name || !last_name || !email || !password) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           'First name, last name, email, and password are required'
+//       });
+//     }
+
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+//     if (!emailRegex.test(email)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid email format'
+//       });
+//     }
+
+//     if (password.length < 6) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Password must be at least 6 characters long'
+//       });
+//     }
+
+
+//     await client.query('BEGIN');
+
+//     const query = `
+//       INSERT INTO employees (
+//         role_id,
+//         first_name,
+//         last_name,
+//         contact_number,
+//         email,
+//         password,
+//         is_active,
+//         created_at,
+//         updated_at
+//       )
+//       VALUES (
+//         $1,
+//         $2,
+//         $3,
+//         $4,
+//         $5,
+//         $6,
+//         $7,
+//         CURRENT_TIMESTAMP,
+//         CURRENT_TIMESTAMP
+//       )
+//       RETURNING
+//         id,
+//         role_id,
+//         first_name,
+//         last_name,
+//         contact_number,
+//         email,
+//         is_active,
+//         created_at,
+//         updated_at
+//     `;
+
+//     const values = [
+//       role_id || null,
+//       first_name.trim(),
+//       last_name.trim(),
+//       contact_number || null,
+//       email.toLowerCase().trim(),
+//       password,
+//       is_active
+//     ];
+
+//     const result = await client.query(query, values);
+
+//     const employee = result.rows[0];
+
+
+//     //   try {
+
+//     //     const token = await getExternalToken(user_id, salt);
+//     //     console.log(emsPayload);
+//     //     const emsResponse = await axios.post(
+//     //       `${process.env.VOICEGATE_URL}/members/`,
+//     //       emsPayload,
+//     //       {
+//     //         headers: {
+//     //           Authorization: `Bearer ${token}`,
+//     //           'Content-Type': 'application/json'
+//     //         },
+//     //         httpsAgent
+//     //       }
+//     //     );
+
+//     //     const emsData = emsResponse.data;
+
+//     //     console.log(
+//     //       'EMS Response:',
+//     //       JSON.stringify(emsData, null, 2)
+//     //     );
+
+//     //     const emsMember = emsData?.members?.[0];
+
+//     //     if (!emsMember) {
+//     //       throw new Error('EMS member data not returned after registration');
+//     //     }
+
+//     //     console.log('EMS Member:', emsMember);
+
+//     //     await client.query(
+//     //       `
+//     //   UPDATE employees
+//     //   SET
+//     //     member_code = $1,
+//     //     member_id = $2,
+//     //     updated_at = CURRENT_TIMESTAMP
+//     //   WHERE id = $3
+//     // `,
+//     //       [
+//     //         emsMember.member_code || null,
+//     //         emsMember.id || null,
+//     //         employee.id
+//     //       ]
+//     //     );
+
+//     //     if (
+//     //       emsData?.error_response?.error_code !== 0
+//     //     ) {
+//     //       const errorMessage =
+//     //         emsData?.error_response?.error_message ||
+//     //         'EMS registration failed';
+
+//     //       throw new Error(errorMessage);
+//     //     }
+
+
+//     //   } catch (emsError) {
+
+//     //     let errorMessage = 'EMS registration failed';
+
+//     //     if (axios.isAxiosError(emsError)) {
+
+//     //       console.error(
+//     //         'EMS API HTTP Status:',
+//     //         emsError.response?.status
+//     //       );
+
+//     //       console.error(
+//     //         'EMS API Error Response:',
+//     //         emsError.response?.data
+//     //       );
+
+//     //       const errorResponse =
+//     //         emsError.response?.data?.error_response;
+
+//     //       errorMessage =
+//     //         errorResponse?.error_message ||
+//     //         emsError.response?.data?.message ||
+//     //         emsError.message ||
+//     //         'EMS API request failed';
+
+//     //     } else {
+
+//     //       errorMessage =
+//     //         emsError.message ||
+//     //         'EMS registration failed';
+//     //     }
+
+//     //     console.error(
+//     //       'EMS Error Message:',
+//     //       errorMessage
+//     //     );
+
+//     //     await client.query('ROLLBACK');
+
+//     //     console.log(
+//     //       'Local DB transaction rolled back'
+//     //     );
+
+//     //     return res.status(502).json({
+//     //       success: false,
+//     //       message: 'Employee registration failed in EMS',
+//     //       error: errorMessage
+//     //     });
+//     //   }
+
+//     await client.query('COMMIT');
+
+
+//     const employeeWithRole =
+//       await getEmployeeWithRole(employee.id);
+
+//     return res.status(201).json({
+//       success: true,
+//       message: 'User added successfully',
+//       data: formatEmployeeResponse(employeeWithRole)
+//     });
+
+//   } catch (error) {
+
+//     try {
+//       await client.query('ROLLBACK');
+
+
+//     } catch (rollbackError) {
+
+//       console.error(
+//         'Rollback error:',
+//         rollbackError
+//       );
+//     }
+
+//     console.error(
+//       'Employee registration error:',
+//       error
+//     );
+
+//     if (error.code === '23505') {
+//       return res.status(409).json({
+//         success: false,
+//         message: 'Email already exists'
+//       });
+//     }
+
+//     return res.status(500).json({
+//       success: false,
+//       message: 'Employee registration failed',
+//       error: error.message
+//     });
+
+//   } finally {
+
+//     client.release();
+//   }
+// };
+
 export const registerEmployee = async (req, res) => {
   const client = await pool.connect();
 
   try {
     const payload = req.body.payload;
-    const emsPayload = req.body.emsPayload;
-
-    const { user_id, salt } = req.query;
 
     if (!payload) {
       return res.status(400).json({
         success: false,
         message: 'Employee payload is required'
-      });
-    }
-
-    if (!emsPayload) {
-      return res.status(400).json({
-        success: false,
-        message: 'EMS payload is required'
       });
     }
 
@@ -67,11 +327,19 @@ export const registerEmployee = async (req, res) => {
       contact_number,
       email,
       password,
-      is_active = true
+      is_active = true,
+
+      member_id,
+      member_code
     } = payload;
 
 
-    if (!first_name || !last_name || !email || !password) {
+    if (
+      !first_name ||
+      !last_name ||
+      !email ||
+      !password
+    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -79,7 +347,8 @@ export const registerEmployee = async (req, res) => {
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email)) {
       return res.status(400).json({
@@ -91,12 +360,30 @@ export const registerEmployee = async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long'
+        message:
+          'Password must be at least 6 characters long'
+      });
+    }
+
+    if (!member_id) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'EMS member_id is required'
+      });
+    }
+
+    if (!member_code) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'EMS member_code is required'
       });
     }
 
 
     await client.query('BEGIN');
+
 
     const query = `
       INSERT INTO employees (
@@ -107,6 +394,8 @@ export const registerEmployee = async (req, res) => {
         email,
         password,
         is_active,
+        member_id,
+        member_code,
         created_at,
         updated_at
       )
@@ -118,6 +407,8 @@ export const registerEmployee = async (req, res) => {
         $5,
         $6,
         $7,
+        $8,
+        $9,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
       )
@@ -129,132 +420,38 @@ export const registerEmployee = async (req, res) => {
         contact_number,
         email,
         is_active,
+        member_id,
+        member_code,
         created_at,
         updated_at
     `;
 
     const values = [
       role_id || null,
+
       first_name.trim(),
+
       last_name.trim(),
+
       contact_number || null,
+
       email.toLowerCase().trim(),
+
       password,
-      is_active
+
+      is_active,
+
+      member_id,
+
+      member_code
     ];
 
-    const result = await client.query(query, values);
+    const result =
+      await client.query(query, values);
 
-    const employee = result.rows[0];
+    const employee =
+      result.rows[0];
 
-
-    try {
-
-      const token = await getExternalToken(user_id, salt);
-      console.log(emsPayload);
-      const emsResponse = await axios.post(
-        `${process.env.VOICEGATE_URL}/members/`,
-        emsPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          httpsAgent
-        }
-      );
-
-      const emsData = emsResponse.data;
-
-      console.log(
-        'EMS Response:',
-        JSON.stringify(emsData, null, 2)
-      );
-
-      const emsMember = emsData?.members?.[0];
-
-      if (!emsMember) {
-        throw new Error('EMS member data not returned after registration');
-      }
-
-      console.log('EMS Member:', emsMember);
-
-      await client.query(
-        `
-    UPDATE employees
-    SET
-      member_code = $1,
-      member_id = $2,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = $3
-  `,
-        [
-          emsMember.member_code || null,
-          emsMember.id || null,
-          employee.id
-        ]
-      );
-
-      if (
-        emsData?.error_response?.error_code !== 0
-      ) {
-        const errorMessage =
-          emsData?.error_response?.error_message ||
-          'EMS registration failed';
-
-        throw new Error(errorMessage);
-      }
-
-
-    } catch (emsError) {
-
-      let errorMessage = 'EMS registration failed';
-
-      if (axios.isAxiosError(emsError)) {
-
-        console.error(
-          'EMS API HTTP Status:',
-          emsError.response?.status
-        );
-
-        console.error(
-          'EMS API Error Response:',
-          emsError.response?.data
-        );
-
-        const errorResponse =
-          emsError.response?.data?.error_response;
-
-        errorMessage =
-          errorResponse?.error_message ||
-          emsError.response?.data?.message ||
-          emsError.message ||
-          'EMS API request failed';
-
-      } else {
-
-        errorMessage =
-          emsError.message ||
-          'EMS registration failed';
-      }
-
-      console.error(
-        'EMS Error Message:',
-        errorMessage
-      );
-
-      await client.query('ROLLBACK');
-
-      console.log(
-        'Local DB transaction rolled back'
-      );
-
-      return res.status(502).json({
-        success: false,
-        message: 'Employee registration failed in EMS',
-        error: errorMessage
-      });
-    }
 
     await client.query('COMMIT');
 
@@ -262,20 +459,20 @@ export const registerEmployee = async (req, res) => {
     const employeeWithRole =
       await getEmployeeWithRole(employee.id);
 
+
     return res.status(201).json({
       success: true,
       message: 'User added successfully',
-      data: formatEmployeeResponse(employeeWithRole)
+      data: formatEmployeeResponse(
+        employeeWithRole
+      )
     });
 
   } catch (error) {
 
     try {
       await client.query('ROLLBACK');
-
-
     } catch (rollbackError) {
-
       console.error(
         'Rollback error:',
         rollbackError
@@ -288,6 +485,7 @@ export const registerEmployee = async (req, res) => {
     );
 
     if (error.code === '23505') {
+
       return res.status(409).json({
         success: false,
         message: 'Email already exists'
@@ -296,13 +494,15 @@ export const registerEmployee = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: 'Employee registration failed',
+      message:
+        'Employee registration failed',
       error: error.message
     });
 
   } finally {
 
     client.release();
+
   }
 };
 
