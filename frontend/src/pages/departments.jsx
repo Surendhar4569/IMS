@@ -15,8 +15,6 @@ import {
 import { toast } from 'react-toastify';
 import vgtAPI from "../utils/axiosConfig";
 
-// IMPORTANT: Make sure you have <ToastContainer /> imported from 'react-toastify' 
-// and rendered in your main App.js or root layout file, otherwise toasts will not show!
 
 const Departments = () => {
     // ==========================================
@@ -278,12 +276,12 @@ const Departments = () => {
                     <div className="rounded-2xl bg-gradient-to-r from-[#0B1D3A] via-[#132D5E] to-[#1A3A6E] p-6 text-white shadow-xl">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                             <div>
-                                <div className="flex items-center gap-2 mb-2">
+                                {/* <div className="flex items-center gap-2 mb-2">
                                     <Building2 className="w-5 h-5 text-blue-300" />
                                     <span className="text-xs font-semibold uppercase tracking-wider text-blue-200">
                                         Organization Settings
                                     </span>
-                                </div>
+                                </div> */}
                                 <h1 className="text-3xl font-bold">Departments</h1>
                                 <p className="text-blue-100 mt-1">Manage and organize departments</p>
                             </div>
