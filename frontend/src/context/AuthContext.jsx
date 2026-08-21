@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-import vgtAPI from "../utils/axiosConfig"
+import vgtAPI from "../utils/axiosConfig";
 
 const AuthContext = createContext(null);
 
@@ -96,19 +96,37 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const getJwtPayload = (token) => {
+    try {
+      const payload = token.split(".")[1];
+
+      return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    } catch (error) {
+      console.error("Invalid JWT:", error);
+      return null;
+    }
+  };
+
   const login = async (email, password) => {
     const response = await api.post("/auth/login", { email, password });
     const { token: nextToken, user: nextUser } = response.data;
-    setToken(nextToken);
-    setUser(nextUser);
 
     //getting external token
     const tokenResponse = await vgtAPI.post(`/login/`, {
       email: email,
       password: await generateSalt(email, password),
     });
-    setExternalToken(tokenResponse.data.token);
-    
+
+    const externalToken = tokenResponse.data.token;
+    const payload = getJwtPayload(externalToken);
+
+    setToken(nextToken);
+    setUser({
+      ...nextUser,
+      admin_id: payload?.admin_id,
+    });
+    setExternalToken(externalToken);
+
     return nextUser;
   };
 

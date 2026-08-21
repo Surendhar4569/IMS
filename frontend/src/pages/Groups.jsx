@@ -31,6 +31,8 @@ function Groups() {
     status: "active", // Default status
   });
 
+  const [editingId, setEditingId] = useState(null);
+
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -40,20 +42,44 @@ function Groups() {
     }));
   };
 
+  const handleEdit = (group) => {
+    // console.log(group);
+
+    setEditingId(group.id);
+
+    setFormData({
+      name: group.name || "",
+      code: group.code || "",
+      description: group.description || "",
+      status: group.status || "active",
+
+      createdby_admin_id: {
+        id: group.createdby_admin_id?.id || "",
+      },
+    });
+
+    setIsModalOpen(true);
+  };
+
   //API call
   const handleCreateGroup = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-    //   console.log(formData);
+      if (editingId) {
+        const response = await vgtAPI.put(`/groups/${editingId}`, formData);
+        // console.log(response.data);
 
-      const response = await vgtAPI.post("/groups/", formData);
+        setEditingId(null);
+      } else {
+        const response = await vgtAPI.post("/groups/", formData);
 
-      // Log the data as requested
-    //   console.log("API Call Successful! Response Data:", response.data);
-      setGroups((prev) => [response.data.groups[0], ...prev]);
+        // Log the data as requested
+        //   console.log("API Call Successful! Response Data:", response.data);
+      }
 
+      fetchGroups();
       // Close modal and reset form on success
       setIsModalOpen(false);
       setFormData({ name: "", code: "", description: "", status: "Active" });
@@ -68,10 +94,9 @@ function Groups() {
   const handleDelete = async (group) => {
     setLoading(true);
     try {
-
       const response = await vgtAPI.delete(`/groups/${group.id}`);
 
-    //   console.log("Delete response:", response.data);
+      //   console.log("Delete response:", response.data);
 
       // Remove deleted group from existing state
       setGroups((prev) => prev.filter((item) => item.id !== group.id));
@@ -85,19 +110,21 @@ function Groups() {
     }
   };
 
+  //fetch groups
+  const fetchGroups = async () => {
+    setLoading(true);
+    try {
+      const response = await vgtAPI.get("/groups/");
+      // console.log(response.data);
+      setGroups(response.data.groups);
+    } catch (err) {
+      console.error("Error fetching groups:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchGroups = async () => {
-      setLoading(true);
-      try {
-        const response = await vgtAPI.get("/groups/");
-        // console.log(response.data);
-        setGroups(response.data.groups);
-      } catch (err) {
-        console.error("Error fetching groups:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchGroups();
   }, []);
 
@@ -126,7 +153,7 @@ function Groups() {
   };
   const filteredGroups = filterGroups();
 
-  if (loading) {
+  if (loading || isSubmitting) {
     return (
       <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center py-16">
         <Loader className="w-8 h-8 animate-spin text-[#0B1D3A]" />
@@ -325,30 +352,14 @@ function Groups() {
 
                             <button
                               type="button"
-                              //   onClick={() => handleEdit(group)}
+                              onClick={() => handleEdit(group)}
                               className="p-2 text-gray-600 hover:text-[#0B1D3A] hover:bg-gray-100 rounded-lg transition-all"
                               title="Edit"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
 
-                            {/* ACTIVATE / DEACTIVATE */}
-
-                            <button
-                              type="button"
-                              //   onClick={() => handleToggleStatus(group)}
-                              className={`p-2 rounded-lg transition-all ${
-                                isActive
-                                  ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                                  : "text-green-600 hover:text-green-700 hover:bg-green-50"
-                              }`}
-                              title={isActive ? "Deactivate" : "Activate"}
-                            >
-                              <Power className="w-4 h-4" />
-                            </button>
-
                             {/* DELETE */}
-
                             <button
                               type="button"
                               onClick={() => handleDelete(group)}
@@ -469,10 +480,10 @@ function Groups() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Creating...
+                      `${editingId ? "Updating..." : "Creating..."}`
                     </>
                   ) : (
-                    "Create Group"
+                    `${editingId ? "Update Group" : "Create Group"}`
                   )}
                 </button>
               </div>
