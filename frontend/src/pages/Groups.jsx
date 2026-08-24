@@ -34,6 +34,7 @@ function Groups() {
 
   //group admin state
   const [groupAdminId, setGroupAdminId] = useState("");
+  const [selectedGroupAdmin, setSelectedGroupAdmin] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
 
@@ -49,7 +50,19 @@ function Groups() {
     }));
   };
 
-  const handleEdit = (group) => {
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      code: "",
+      description: "",
+      status: "active",
+    });
+
+    setGroupAdminId("");
+    setSelectedGroupAdmin(null);
+  };
+
+  const handleEdit = async (group) => {
     // console.log(group);
 
     setEditingId(group.id);
@@ -65,6 +78,8 @@ function Groups() {
       },
     });
 
+    // calling fetchAdminGroupsByGroupId for edit
+    await fetchAdminGroupsByGroupId(group.id);
     setIsModalOpen(true);
   };
 
@@ -76,17 +91,40 @@ function Groups() {
     let response;
     try {
       if (editingId) {
+        // console.log(formData);
+        // console.log(selectedGroupAdmin);
+        // console.log(groupAdminId);
+
         response = await vgtAPI.put(`/groups/${editingId}`, formData);
-        // console.log(response.data);
+        // console.log("group update response" , response.data);
+
+        // if the group admin changes, update admin groups
+        if (groupAdminId !== selectedGroupAdmin?.admin_id?.id) {
+          // Admin Groups Payload
+          const payload = {
+            admin_id: {
+              id: groupAdminId,
+            },
+            group_id: {
+              id: editingId,
+            },
+          };
+
+          let res = await vgtAPI.put(
+            `/admins_groups/${selectedGroupAdmin.id}`,
+            payload,
+          );
+          // console.log("admin res" , res.data);
+        }
       } else {
-        console.log(formData);
-        console.log(groupAdminId);
+        // console.log(formData);
+        // console.log(groupAdminId);
 
         response = await vgtAPI.post("/groups/", formData);
-        console.log(
-          "API Call Successful! Response Data:",
-          response.data.groups[0].id,
-        );
+        // console.log(
+        //   "API Call Successful! Response Data:",
+        //   response.data.groups[0].id,
+        // );
 
         // Log the data as requested
         // console.log("API Call Successful! Response Data:", response.data);
@@ -100,35 +138,49 @@ function Groups() {
             id: response.data.groups[0].id,
           },
         };
-        var adminGroupResponse = await vgtAPI.post(
+
+        const adminGroupResponse = await vgtAPI.post(
           "/admins_groups/",
           adminGroupsPayload,
         );
-        console.log(adminGroupResponse);
+        // console.log(adminGroupResponse);
       }
 
       fetchGroups();
       // Close modal and reset form on success
+      resetForm();
       setIsModalOpen(false);
-      setFormData({
-        name: "",
-        code: "",
-        description: "",
-        status: "Active",
-        group_admin_id: "",
-      });
 
       toast.success(
-        response.data?.error_response?.error_message ||
+        response?.data?.error_response?.error_message ||
           `Group ${editingId ? "Updated" : "Created"} successfully`,
       );
 
       setEditingId(null);
-      setGroupAdminId("");
     } catch (error) {
       console.error("Error creating group:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  //get admin groups by group Id
+  const fetchAdminGroupsByGroupId = async (group_id) => {
+    try {
+      setLoading(true);
+      const response = await vgtAPI.get("/admins_groups/", {
+        params: {
+          query: `group_id:${group_id}`,
+        },
+      });
+      // console.log(response.data);
+      let adminGroups = response.data.admins_groups;
+      setGroupAdminId(adminGroups ? adminGroups[0].admin_id.id : "");
+      setSelectedGroupAdmin(adminGroups ? adminGroups[0] : null);
+    } catch (err) {
+      console.error("Error fetching Admin Groups:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -171,7 +223,7 @@ function Groups() {
     try {
       setLoading(true);
       const response = await vgtAPI.get("/admins/");
-      console.log(response.data.admins);
+      // console.log(response.data.admins);
       setAdmins(response.data.admins);
     } catch (err) {
       console.error("Error fetching Admins:", err);
@@ -448,7 +500,10 @@ function Groups() {
               </h2>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  resetForm();
+                  setIsModalOpen(false);
+                }}
                 className="text-gray-300 hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -546,7 +601,10 @@ function Groups() {
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    resetForm();
+                    setIsModalOpen(false);
+                  }}
                   className="px-5 py-2.5 rounded-lg text-gray-700 text-sm font-semibold hover:bg-gray-100 transition-all border border-gray-300"
                 >
                   Cancel
