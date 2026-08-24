@@ -14,6 +14,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 function Groups() {
   const [groups, setGroups] = useState([]);
@@ -31,7 +32,13 @@ function Groups() {
     status: "active", // Default status
   });
 
+  //group admin state
+  const [groupAdminId, setGroupAdminId] = useState("");
+
   const [editingId, setEditingId] = useState(null);
+
+  //admin state
+  const [admins, setAdmins] = useState([]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -66,23 +73,58 @@ function Groups() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    let response;
     try {
       if (editingId) {
-        const response = await vgtAPI.put(`/groups/${editingId}`, formData);
+        response = await vgtAPI.put(`/groups/${editingId}`, formData);
         // console.log(response.data);
-
-        setEditingId(null);
       } else {
-        const response = await vgtAPI.post("/groups/", formData);
+        console.log(formData);
+        console.log(groupAdminId);
+
+        response = await vgtAPI.post("/groups/", formData);
+        console.log(
+          "API Call Successful! Response Data:",
+          response.data.groups[0].id,
+        );
 
         // Log the data as requested
-        //   console.log("API Call Successful! Response Data:", response.data);
+        // console.log("API Call Successful! Response Data:", response.data);
+
+        // Admin Groups Payload
+        const adminGroupsPayload = {
+          admin_id: {
+            id: groupAdminId,
+          },
+          group_id: {
+            id: response.data.groups[0].id,
+          },
+        };
+        var adminGroupResponse = await vgtAPI.post(
+          "/admins_groups/",
+          adminGroupsPayload,
+        );
+        console.log(adminGroupResponse);
       }
 
       fetchGroups();
       // Close modal and reset form on success
       setIsModalOpen(false);
-      setFormData({ name: "", code: "", description: "", status: "Active" });
+      setFormData({
+        name: "",
+        code: "",
+        description: "",
+        status: "Active",
+        group_admin_id: "",
+      });
+
+      toast.success(
+        response.data?.error_response?.error_message ||
+          `Group ${editingId ? "Updated" : "Created"} successfully`,
+      );
+
+      setEditingId(null);
+      setGroupAdminId("");
     } catch (error) {
       console.error("Error creating group:", error);
     } finally {
@@ -112,8 +154,8 @@ function Groups() {
 
   //fetch groups
   const fetchGroups = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const response = await vgtAPI.get("/groups/");
       // console.log(response.data);
       setGroups(response.data.groups);
@@ -124,8 +166,23 @@ function Groups() {
     }
   };
 
+  //fetch admins
+  const fetchAdmins = async () => {
+    try {
+      setLoading(true);
+      const response = await vgtAPI.get("/admins/");
+      console.log(response.data.admins);
+      setAdmins(response.data.admins);
+    } catch (err) {
+      console.error("Error fetching Admins:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchGroups();
+    fetchAdmins();
   }, []);
 
   //   Stats
@@ -442,9 +499,31 @@ function Groups() {
                   value={formData.status}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0B1D3A] focus:border-transparent transition-all"
+                  required
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Admins Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Group Admin <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="group_admin_id"
+                  value={groupAdminId}
+                  onChange={(e) => setGroupAdminId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0B1D3A] focus:border-transparent transition-all"
+                  required
+                >
+                  <option value="">Select Group Admin</option>
+                  {admins.map((admin) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.username}
+                    </option>
+                  ))}
                 </select>
               </div>
 
