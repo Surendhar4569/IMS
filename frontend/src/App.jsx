@@ -30,6 +30,7 @@ import PostIncidentReviewForm from "./pages/RCA";
 import TerminalHierarchy from "./pages/RoomsAvaiblity";
 import { Toaster } from 'react-hot-toast';
 import Departments from "./pages/departments";
+import Groups from "./pages/Groups";
 
 function App() {
   return (
@@ -155,6 +156,11 @@ function AppRoutes() {
           <Route
             path="departments"
             element={<Departments />}
+          />
+
+          <Route
+            path="groups"
+            element={<Groups />}
           />
         </Route>
 
