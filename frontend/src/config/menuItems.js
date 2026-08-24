@@ -3,6 +3,7 @@ import {
     Users,
     Building2,
     AlertTriangle,
+    UsersRound
 } from "lucide-react";
 
 export const menuItems = [
@@ -38,6 +39,18 @@ export const menuItems = [
                 id: "employees",
                 label: "Add User",
                 path: "/employees",
+            },
+        ],
+    },
+    {
+        id: "group-management",
+        label: "Group Management",
+        icon: UsersRound,
+        children: [
+            {
+                id: "groups",
+                label: "Groups",
+                path: "/groups",
             },
         ],
     },

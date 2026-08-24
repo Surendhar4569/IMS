@@ -44,7 +44,7 @@ function Login() {
         }
     };
 
-    return (
+    return ( 
         <div className="min-h-screen flex" style={{ backgroundColor: '#F8F9FC' }}>
 
             {/* Left Panel — Branding */}
