@@ -52,6 +52,11 @@ export const menuItems = [
                 label: "Groups",
                 path: "/groups",
             },
+            {
+                id: "member-groups",
+                label: "Member Groups",
+                path: "/member-groups",
+            }
         ],
     },
     {

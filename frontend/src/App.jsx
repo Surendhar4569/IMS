@@ -31,6 +31,7 @@ import TerminalHierarchy from "./pages/RoomsAvaiblity";
 import { Toaster } from 'react-hot-toast';
 import Departments from "./pages/departments";
 import Groups from "./pages/Groups";
+import MemberGroups from "./pages/MemberGroups";
 
 function App() {
   return (
@@ -162,7 +163,13 @@ function AppRoutes() {
             path="groups"
             element={<Groups />}
           />
+          <Route
+            path="member-groups"
+            element={<MemberGroups />}
+          />
         </Route>
+
+
 
 
 
