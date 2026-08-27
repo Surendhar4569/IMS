@@ -6,15 +6,18 @@ import {
   Loader,
   Loader2,
   LoaderCircle,
+  NotepadTextDashed,
   Plus,
   Power,
   Search,
+  Settings2,
   Trash2,
   UsersRound,
   X,
   XCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import ManageAdminsModal from "../components/ManageAdminsModal";
 
 function Groups() {
   const [groups, setGroups] = useState([]);
@@ -40,6 +43,82 @@ function Groups() {
 
   //admin state
   const [admins, setAdmins] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+
+  //Manage admins modal states
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [groupAdmins, setGroupAdmins] = useState([]);
+
+  //Manage admins modal states functions
+  const handleManage = async (group) => {
+    setSelectedGroup(group);
+    setLoading(true);
+    setIsManageModalOpen(true);
+
+    try {
+      // 1. Fetch Admins in this specific group
+      const groupRes = await vgtAPI.get("/admins_groups/", {
+        params: {
+          query: `group_id:${group.id}`,
+        },
+      });
+      // console.log(groupRes.data);
+
+      setGroupAdmins(groupRes.data.admins_groups || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // API Call: Remove Admin from Group
+  const handleRemoveAdmin = async (adminGroupId) => {
+    try {
+      // Replace with your actual DELETE endpoint
+      await vgtAPI.delete(`/admins_groups/${adminGroupId}`);
+
+      // Optimistic UI update: Remove from state instantly
+      setGroupAdmins((prev) => prev.filter((item) => item.id !== adminGroupId));
+    } catch (error) {
+      console.error("Failed to remove admin:", error);
+    }
+  };
+
+  // API Call: Add Admins to Group
+  const handleAddAdmins = async (selectedAdminIds) => {
+    if (!selectedGroup || selectedAdminIds.length === 0) return;
+    // console.log(selectedAdminIds);
+
+    try {
+      const responses = await Promise.all(
+        selectedAdminIds.map((adminId) => {
+          const adminGroupsPayload = {
+            admin_id: {
+              id: adminId,
+            },
+            group_id: {
+              id: selectedGroup.id,
+            },
+          };
+
+          return vgtAPI.post("/admins_groups/", adminGroupsPayload);
+        }),
+      );
+
+      // console.log("Admins added successfully:", responses);
+
+      // Refetch group admins to show the updated list
+      const groupRes = await vgtAPI.get("/admins_groups/", {
+        params: {
+          query: `group_id:${selectedGroup.id}`,
+        },
+      });
+      setGroupAdmins(groupRes.data.admins_groups || []);
+    } catch (error) {
+      console.error("Failed to add admins:", error);
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -379,10 +458,6 @@ function Groups() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">
-                      Id
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">
                       Group Name
                     </th>
 
@@ -395,10 +470,6 @@ function Groups() {
                     </th>
 
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase text-gray-500">
-                      Created By
-                    </th>
-
-                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase text-gray-500">
                       Actions
                     </th>
                   </tr>
@@ -413,9 +484,6 @@ function Groups() {
                         key={group.id}
                         className="hover:bg-gray-50 transition-colors"
                       >
-                        {/* ID */}
-                        <td className="px-6 py-4">{group.id}</td>
-
                         {/* group */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -448,17 +516,30 @@ function Groups() {
                           </span>
                         </td>
 
-                        {/* created by admin */}
-                        <td className="px-6 py-4">
-                          {group.createdby_admin_id.username || "NA"}
-                        </td>
-
                         {/* ACTIONS */}
-
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {/* EDIT */}
+                          <div className="flex items-center gap-1">
+                            {/* Manage */}
+                            <button
+                              type="button"
+                              onClick={() => handleManage(group)}
+                              className="p-2 text-gray-600 hover:text-[#0B1D3A] hover:bg-gray-100 rounded-lg transition-all"
+                              title="Manage"
+                            >
+                              <Settings2 className="w-4 h-4" />
+                            </button>
 
+                            {/* Map Templates */}
+                            <button
+                              type="button"
+                              // onClick={() => handleEdit(group)}
+                              className="p-2 text-gray-600 hover:text-[#0B1D3A] hover:bg-gray-100 rounded-lg transition-all"
+                              title="Templates"
+                            >
+                              <NotepadTextDashed className="w-4 h-4" />
+                            </button>
+
+                            {/* EDIT */}
                             <button
                               type="button"
                               onClick={() => handleEdit(group)}
@@ -627,6 +708,21 @@ function Groups() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Manage Admins Modal */}
+      {/* The Modal */}
+      {isManageModalOpen && (
+        <ManageAdminsModal
+          isOpen={isManageModalOpen}
+          onClose={() => setIsManageModalOpen(false)}
+          group={selectedGroup}
+          groupAdmins={groupAdmins}
+          allAdmins={admins}
+          isLoading={loading}
+          onRemove={handleRemoveAdmin}
+          onAdd={handleAddAdmins}
+        />
       )}
     </div>
   );

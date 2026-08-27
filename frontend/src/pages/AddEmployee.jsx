@@ -147,17 +147,17 @@ function Employees() {
     return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   };
 
-//   const fetchStats = async () => {
-//     try {
-//       const response = await axios.get(
-//         `${import.meta.env.VITE_API_URL}/stats/employees`,
-//         getAuthConfig(),
-//       );
-//       setStats(response.data.data);
-//     } catch (err) {
-//       console.error("Error fetching stats:", err);
-//     }
-//   };
+  //   const fetchStats = async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `${import.meta.env.VITE_API_URL}/stats/employees`,
+  //         getAuthConfig(),
+  //       );
+  //       setStats(response.data.data);
+  //     } catch (err) {
+  //       console.error("Error fetching stats:", err);
+  //     }
+  //   };
 
   const fetchRoles = async () => {
     try {
@@ -442,7 +442,8 @@ function Employees() {
       // Check EMS business-level error
       if (emsAdminData?.error_response?.error_code !== 0) {
         throw new Error(
-          emsAdminData?.error_response?.error_message || "EMS admin creation failed",
+          emsAdminData?.error_response?.error_message ||
+            "EMS admin creation failed",
         );
       }
 
@@ -477,7 +478,8 @@ function Employees() {
       // Check EMS business-level error
       if (emsAdminRoleRes?.error_response?.error_code !== 0) {
         throw new Error(
-          emsAdminRoleRes?.error_response?.error_message || "EMS admin creation failed",
+          emsAdminRoleRes?.error_response?.error_message ||
+            "EMS admin creation failed",
         );
       }
 
@@ -500,8 +502,6 @@ function Employees() {
       );
     }
   };
-
-
 
   const createEMSMemberPhone = async (phonePayload) => {
     try {
@@ -1184,7 +1184,7 @@ function Employees() {
             throw new Error(
               "EMS member ID was not returned after member creation",
             );
-            
+
             // ==========================================
             // GET EMPLOYEE FROM LOCAL LIST
             // ==========================================
@@ -1245,18 +1245,18 @@ function Employees() {
 
           const adminResponse = await makeMemberAsAdmin(adminPayload);
           console.log(adminResponse);
-          
+
           const adminRolePayload = {
-              admin_id: {
-                  id: adminResponse?.id,
-                  member_id: {
-                      id: emsMember.id,
-                    },
-                },
-                role: formData.role,
-            };
-            const adminRoleResponse = await assignRoleToAdmin(adminRolePayload);
-            console.log(adminRoleResponse);
+            admin_id: {
+              id: adminResponse?.id,
+              member_id: {
+                id: emsMember.id,
+              },
+            },
+            role: formData.role,
+          };
+          const adminRoleResponse = await assignRoleToAdmin(adminRolePayload);
+          console.log(adminRoleResponse);
 
           // =====================================================
           // STEP 4: ONLY NOW CREATE LOCAL EMPLOYEE
@@ -1305,7 +1305,7 @@ function Employees() {
       setShowAddUserModal(false);
 
       await fetchEmployees();
-    //   await fetchStats();
+      //   await fetchStats();
     } catch (err) {
       console.error("Employee save error:", err);
 
@@ -1624,7 +1624,7 @@ function Employees() {
       );
       setMessage({ type: "success", text: `User ${action}d successfully` });
       await fetchEmployees();
-    //   await fetchStats();
+      //   await fetchStats();
     } catch (err) {
       setMessage({
         type: "error",
@@ -1868,18 +1868,31 @@ function Employees() {
             {/* Modal Content Container */}
             <div
               // Changed to w-[80vw] and h-[80vh] to cover 80% of the screen
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 w-[80vw] h-[80vh] max-w-[95vw] max-h-[95vh] overflow-y-auto"
+              className="bg-white rounded-2xl shadow-xl border border-[#0B1D3A] w-[80vw] h-[80vh] max-w-[95vw] max-h-[95vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {editingId ? "Edit User" : "Add New User"}
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {editingId
-                    ? "Update user information and account details"
-                    : "Enter user information and account details"}
-                </p>
+              <div className="flex items-center justify-between bg-[#0B1D3A] px-6 py-5 border-b border-gray-200">
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    {editingId ? "Edit User" : "Add New User"}
+                  </h2>
+                  <p className="text-sm text-white mt-1">
+                    {editingId
+                      ? "Update user information and account details"
+                      : "Enter user information and account details"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                    setShowAddUserModal(false);
+                  }}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
               <form onSubmit={handleSubmit} className="p-6">
