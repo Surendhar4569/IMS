@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ManageAdminsModal from "../components/ManageAdminsModal";
+import TemplateMapperModal from "../components/TemplateMapperModal";
 
 function Groups() {
   const [groups, setGroups] = useState([]);
@@ -48,6 +49,64 @@ function Groups() {
   //Manage admins modal states
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [groupAdmins, setGroupAdmins] = useState([]);
+
+  //SMS and Watsapp template mapping Modal states
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [smsTemplates, setSmsTemplates] = useState([]);
+  const [whatsappTemplates, setWhatsappTemplates] = useState([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+
+  //SMS and Watsapp template mapping functions
+  const handleOpenTemplates = async () => {
+    setIsTemplateModalOpen(true);
+    setIsLoadingTemplates(true);
+
+    try {
+      // Using Promise.all to fetch both APIs concurrently
+      const [smsRes, whatsappRes] = await Promise.all([
+        vgtAPI.get("/sms_templates/"),
+        vgtAPI.get("/whatsapp_templates/"),
+      ]);
+      console.log(smsRes.data);
+      console.log(whatsappRes.data);
+
+      // Extracting data based on your provided structure
+      setSmsTemplates(smsRes.data.sms_templates || []);
+      setWhatsappTemplates(whatsappRes.data.whatsapp_templates || []);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
+  // API Call: Map templates to group
+  const handleMapTemplates = async (selectedSmsIds, selectedWhatsappIds) => {
+    // Assuming you have the group ID stored in state.
+    // For demonstration, using a dummy group object.
+    const group = { id: "13", name: "Red" };
+
+    try {
+      const payload = {
+        group_id: group.id,
+        sms_template_ids: selectedSmsIds,
+        whatsapp_template_ids: selectedWhatsappIds,
+      };
+      console.log(payload);
+      
+
+      // Replace with your actual mapping endpoint
+      // const response = await vgtAPI.post("/map_group_templates/", payload);
+
+      // As requested, logging the response/data
+      // console.log("Templates mapped successfully:", response.data);
+
+      // Close modal on success
+      setIsTemplateModalOpen(false);
+    } catch (error) {
+      console.error("Error mapping templates:", error);
+    }
+  };
 
   //Manage admins modal states functions
   const handleManage = async (group) => {
@@ -532,7 +591,7 @@ function Groups() {
                             {/* Map Templates */}
                             <button
                               type="button"
-                              // onClick={() => handleEdit(group)}
+                              onClick={handleOpenTemplates}
                               className="p-2 text-gray-600 hover:text-[#0B1D3A] hover:bg-gray-100 rounded-lg transition-all"
                               title="Templates"
                             >
@@ -722,6 +781,18 @@ function Groups() {
           isLoading={loading}
           onRemove={handleRemoveAdmin}
           onAdd={handleAddAdmins}
+        />
+      )}
+
+      {/* SMS and Watsapp template mapping Modal */}
+      {isTemplateModalOpen && (
+        <TemplateMapperModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+          smsTemplates={smsTemplates}
+          whatsappTemplates={whatsappTemplates}
+          isLoading={isLoadingTemplates}
+          onSubmit={handleMapTemplates}
         />
       )}
     </div>
