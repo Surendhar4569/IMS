@@ -93,7 +93,6 @@ function Groups() {
         whatsapp_template_ids: selectedWhatsappIds,
       };
       console.log(payload);
-      
 
       // Replace with your actual mapping endpoint
       // const response = await vgtAPI.post("/map_group_templates/", payload);
@@ -589,14 +588,14 @@ function Groups() {
                             </button>
 
                             {/* Map Templates */}
-                            <button
+                            {/* <button
                               type="button"
                               onClick={handleOpenTemplates}
                               className="p-2 text-gray-600 hover:text-[#0B1D3A] hover:bg-gray-100 rounded-lg transition-all"
                               title="Templates"
                             >
                               <NotepadTextDashed className="w-4 h-4" />
-                            </button>
+                            </button> */}
 
                             {/* EDIT */}
                             <button
@@ -673,13 +672,13 @@ function Groups() {
                     Code <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     name="code"
                     value={formData.code}
                     onChange={handleInputChange}
                     required
                     placeholder="Enter group code"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0B1D3A] focus:border-transparent transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0B1D3A] focus:border-transparent transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </div>
               </div>
